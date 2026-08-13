@@ -4,7 +4,7 @@ An embeddable chat widget for the Lahore Garrison University admission site. It
 answers questions about fees, admission criteria, scholarships, roadmaps and the
 application process in English, Roman Urdu, or Urdu.
 
-Its knowledge comes from lgu.edu.pk itself — 223 admission-relevant pages are
+Its knowledge comes from lgu.edu.pk itself — 237 admission-relevant pages are
 scraped into a local knowledge base, so fee tables and criteria are whatever the
 site currently says rather than something hardcoded.
 
@@ -16,7 +16,7 @@ question
    ├─ 1. FAQ match?  ──────► curated answer, instant, no API cost
    │     (criteria, how to apply, contact, scholarships, merit, test)
    │
-   └─ 2. BM25 retrieval over 536 chunks
+   └─ 2. BM25 retrieval over 575 chunks
          │
          └─ 3. Claude, grounded strictly in the retrieved chunks
 ```
@@ -28,9 +28,16 @@ tables have those numbers.
 
 Retrieval is lexical (BM25), not embeddings: the corpus is mostly program codes,
 proper nouns and numbers — `BSCS`, `17,500`, `M.Phil` — which lexical search
-matches better, and it needs no API call, so tier 1 stays free. A Roman-Urdu
-synonym map (`fees`→`fee`, `dakhla`→`admission`, `kitni`→`how much`) is what
-makes "fees kitni hai" retrievable at all.
+matches better, and it needs no API call, so tier 1 stays free.
+
+Query tokens are normalised in three ways before matching, each fixing a real
+failure seen in use:
+
+| Input | Problem | Handling |
+|---|---|---|
+| `fees kitni hai` | Roman Urdu isn't in the corpus | Synonym map to the English terms the site uses |
+| `bscmai` | Site writes `BS CMAI` with a space, so the glued form matches nothing | Split a degree prefix off when the remainder is a real term |
+| `creteria` | One typo returned **zero** results for the whole query | Nearest vocabulary term within 1–2 edits |
 
 ## Providers and cost
 
@@ -159,6 +166,12 @@ the scrape does not need to run at deploy time.
   no program named returns a clarifying question rather than a number, because
   every faculty has a different fee table and picking one would read as
   authoritative while being wrong for most readers.
+- **Some LGU pages are empty on their side.** `/ph-d-cs-fee-structure/` reads
+  "Fee Structure will be display soon!"; `/doctoral/`, `/training-programs/` and
+  the `/internationalisation-*` pages are headings with no body. The scraper
+  reports every page it drops for being too thin, so a real page that stops
+  extracting correctly shows up instead of vanishing quietly — check that list
+  after each scrape.
 - Answers are only as current as the last scrape.
 
 ## Rate limiting

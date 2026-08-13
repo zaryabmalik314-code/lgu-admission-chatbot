@@ -7,7 +7,7 @@
  */
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ORIGIN = 'https://lgu.edu.pk';
@@ -54,9 +54,17 @@ const INCLUDE = [
   /mphil/i,
   /ph-?d/i,
   /international-diploma/i,
-  /internationalisation-(admissions|programs|application-process|about)/i,
+  /internationalisation-(admissions|programs|application-process|about|language)/i,
   /student-handbook/i,
   /how-can-we-help/i,
+  // Program detail pages that name the degree without any of the markers
+  // above — "/mscs-overview/", "/criminology-overview/", "/doctoral/".
+  /overview/i,
+  /doctoral/i,
+  /award-of-/i,
+  /structure/i,
+  /bachelors?-of-/i,
+  /btech|hnd/i,
 ];
 
 // Pages that match INCLUDE by accident but carry nothing a student needs.
@@ -183,7 +191,7 @@ const NOISE_LINES = [
   /\bLGU \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{2}:\d{2}$/,
 ];
 
-function htmlToText(html) {
+export function htmlToText(html) {
   // Narrow to the main content column first — Avada wraps the real page body in
   // #content, and everything outside it is the same nav/footer on every page.
   const contentMatch = html.match(/<div[^>]+id=["']content["'][^>]*>([\s\S]*)<\/div>\s*<\/div>/i);
@@ -321,8 +329,17 @@ async function main() {
     return { url, ok: true, title, text };
   });
 
-  const good = pages.filter((p) => p.ok && p.text && p.text.length > 120);
+  // A page is worth keeping if it has some prose, or if it has a table row —
+  // several program pages are nothing but a short "Name | Duration" table, and
+  // a flat length cutoff threw those away along with the real placeholders.
+  const worthKeeping = (p) =>
+    p.ok && p.text && (p.text.length > 120 || (p.text.length > 55 && p.text.includes(' | ')));
+
+  const good = pages.filter(worthKeeping);
   const failed = pages.filter((p) => !p.ok);
+  // Pages that fetched fine but yielded almost no text. Silently dropping
+  // these once hid a missing fee page, so they get reported.
+  const thin = pages.filter((p) => p.ok && !worthKeeping(p));
 
   const chunks = [];
   for (const p of good) chunks.push(...chunk(p.title, p.url, p.text));
@@ -351,10 +368,18 @@ async function main() {
   console.log(
     `\nDone. ${good.length} pages kept, ${failed.length} failed, ${chunks.length} chunks → data/kb.json`
   );
-  if (failed.length) console.log('Failed:', failed.map((f) => f.url).join('\n  '));
+  if (failed.length) console.log('\nFailed:\n  ' + failed.map((f) => f.url).join('\n  '));
+  if (thin.length)
+    console.log(
+      `\n${thin.length} fetched but too thin to keep (check these are really empty):\n  ` +
+        thin.map((t) => t.url.replace(ORIGIN, '')).join('\n  ')
+    );
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+// Only crawl when run directly — the extraction helpers are imported by tests.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

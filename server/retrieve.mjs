@@ -108,6 +108,63 @@ function tokenize(text) {
   return out;
 }
 
+/** Bounded Levenshtein — returns `max + 1` as soon as it can't do better. */
+function editDistance(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const curr = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+      if (curr[j] < best) best = curr[j];
+    }
+    if (best > max) return max + 1;
+    prev = curr;
+  }
+  return prev[b.length];
+}
+
+// Degree prefixes students glue onto a program code: "bscmai", "mscs", "bsse".
+const DEGREE_PREFIX = /^(bs|ms|ad|adp|bba|mba|phd|mphil)([a-z]{2,})$/;
+
+/**
+ * Map a query token onto something the corpus actually contains.
+ *
+ * Two failures this fixes, both seen in real use:
+ *   "bscmai"   the site writes "BS CMAI" with a space, so the glued form
+ *              matches nothing at all.
+ *   "creteria" a single typo returned zero results for the whole query,
+ *              because BM25 only does exact matches.
+ *
+ * @returns {string[]} tokens to search with (possibly empty)
+ */
+function normalizeQueryToken(token, vocab) {
+  if (vocab.has(token)) return [token];
+
+  const glued = token.match(DEGREE_PREFIX);
+  if (glued && vocab.has(glued[2])) return [glued[1], glued[2]];
+
+  // Typo correction. Short tokens are excluded — at 3 characters almost
+  // everything is within one edit of something, and the corrections are wrong
+  // more often than right.
+  if (token.length < 5) return [];
+  const max = token.length <= 7 ? 1 : 2;
+  let best = null;
+  let bestDist = max + 1;
+  for (const term of vocab) {
+    if (Math.abs(term.length - token.length) > max) continue;
+    const d = editDistance(token, term, max);
+    if (d < bestDist) {
+      bestDist = d;
+      best = term;
+      if (d === 1) break; // close enough; stop scanning
+    }
+  }
+  return best ? [best] : [];
+}
+
 let index = null;
 
 export async function loadIndex() {
@@ -131,7 +188,14 @@ export async function loadIndex() {
   const idf = new Map();
   for (const [t, n] of df) idf.set(t, Math.log(1 + (docs.length - n + 0.5) / (n + 0.5)));
 
-  index = { docs, idf, avgLen, scrapedAt: kb.scrapedAt, source: kb.source };
+  index = {
+    docs,
+    idf,
+    avgLen,
+    vocab: new Set(df.keys()),
+    scrapedAt: kb.scrapedAt,
+    source: kb.source,
+  };
   return index;
 }
 
@@ -139,8 +203,12 @@ export async function loadIndex() {
  * @returns {Promise<Array<{title, url, text, score}>>} top-k chunks, best first.
  */
 export async function search(query, k = 6) {
-  const { docs, idf, avgLen } = await loadIndex();
-  const qTokens = tokenize(query);
+  const { docs, idf, avgLen, vocab } = await loadIndex();
+
+  // Query tokens go through normalisation that index tokens don't: fixing a
+  // typo or splitting a glued program code only makes sense against a corpus
+  // that already exists.
+  const qTokens = tokenize(query).flatMap((t) => normalizeQueryToken(t, vocab));
   if (!qTokens.length) return [];
 
   const scored = [];
