@@ -1,0 +1,20 @@
+{
+  "name": "lgu-admission-chatbot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Hybrid FAQ + RAG chatbot for the LGU admission website, embeddable as a widget.",
+  "scripts": {
+    "start": "node server/index.mjs",
+    "dev": "node --watch server/index.mjs",
+    "scrape": "node scraper/scrape.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}

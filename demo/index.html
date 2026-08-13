@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LGU Admissions Chatbot — Demo</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      max-width: 720px; margin: 0 auto; padding: 48px 24px 160px;
+      color: #1c2622; line-height: 1.6;
+    }
+    h1 { color: #0b5d3b; margin-bottom: 4px; }
+    .sub { color: #63706a; margin-top: 0; }
+    code, pre {
+      background: #f2f5f3; border: 1px solid #dfe5e1; border-radius: 6px;
+      font-size: 13.5px;
+    }
+    code { padding: 2px 5px; }
+    pre { padding: 14px; overflow-x: auto; }
+    li { margin: 6px 0; }
+    .note { background: #fff8e6; border: 1px solid #f0dfa8; border-radius: 8px; padding: 14px 16px; }
+  </style>
+</head>
+<body>
+  <h1>LGU Admissions Chatbot</h1>
+  <p class="sub">Demo page — the widget loads bottom-right, exactly as it would on lgu.edu.pk.</p>
+
+  <div class="note">
+    This page is a stand-in for the real admission site. The chatbot itself is the
+    green bubble in the corner.
+  </div>
+
+  <h2>Try asking</h2>
+  <ul>
+    <li>BSCS ki fee kitni hai?</li>
+    <li>MS Computer Science ka admission criteria kya hai?</li>
+    <li>How do I apply for admission?</li>
+    <li>Scholarships kaunse available hain?</li>
+    <li>BS Software Engineering ka roadmap dikhao</li>
+    <li>PhD ke liye kitne marks chahiye?</li>
+  </ul>
+
+  <h2>Embedding on the real site</h2>
+  <p>One tag, anywhere before <code>&lt;/body&gt;</code>:</p>
+  <pre>&lt;script src="https://YOUR-BACKEND/widget.js"
+        data-api="https://YOUR-BACKEND"&gt;&lt;/script&gt;</pre>
+
+  <p>Optional attributes: <code>data-accent</code> (hex colour) and <code>data-title</code>.</p>
+
+  <script src="/widget.js" data-api=""></script>
+</body>
+</html>
