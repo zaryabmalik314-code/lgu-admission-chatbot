@@ -82,8 +82,13 @@ app.post('/api/chat', async (req, res) => {
   }
 
   const stream = sse(res);
+
+  // Must be `res`, not `req`: the request's readable side closes as soon as the
+  // body has been parsed, so a `req` listener fires immediately on every call
+  // and would suppress every delta. `res` closes when the client actually goes
+  // away, which is what we want to stop generating for.
   let closed = false;
-  req.on('close', () => {
+  res.on('close', () => {
     closed = true;
   });
 

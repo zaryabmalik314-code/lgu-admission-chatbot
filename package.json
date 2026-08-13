@@ -5,12 +5,12 @@
   "type": "module",
   "description": "Hybrid FAQ + RAG chatbot for the LGU admission website, embeddable as a widget.",
   "scripts": {
-    "start": "node server/index.mjs",
-    "dev": "node --watch server/index.mjs",
+    "start": "node --env-file-if-exists=.env server/index.mjs",
+    "dev": "node --watch --env-file-if-exists=.env server/index.mjs",
     "scrape": "node scraper/scrape.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

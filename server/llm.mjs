@@ -11,7 +11,7 @@
  * and being able to A/B the two on real questions with one env var is worth far
  * more than the few lines the second implementation costs.
  */
-import { FACTS } from './faq.mjs';
+import { FACTS, detectLanguage } from './faq.mjs';
 
 const PROVIDER = (process.env.LLM_PROVIDER || 'groq').toLowerCase();
 
@@ -51,8 +51,10 @@ Never switch language part-way through an answer. Keep proper nouns, program nam
 - No preamble ("Great question!", "Sure!"). Answer immediately.
 - You are talking to teenagers and their parents, many of whom are stressed about money and deadlines. Be warm and plain-spoken, never bureaucratic.
 
-## Scope
-You only handle LGU admissions: programs, fees, criteria, scholarships, roadmaps, test guidelines, campus and contact. If asked about anything else (homework help, general chat, other universities), say briefly that you only cover LGU admissions and offer what you can help with.
+## Scope — refuse, don't comply-then-disclaim
+You only handle LGU admissions: programs, fees, criteria, scholarships, roadmaps, test guidelines, campus and contact.
+
+For anything else — writing code, homework, essays, general knowledge, other universities, casual chat — refuse in one sentence and say what you can help with instead. Do not produce the answer first and apologise afterwards: answering at all is the failure, even with a disclaimer attached. You are a university's public assistant, not a general chatbot.
 
 ## Apply link
 When the person is ready to apply, give them ${FACTS.applyUrl}`;
@@ -64,8 +66,26 @@ function buildContext(chunks, faqHint) {
   return parts.join('\n\n---\n\n');
 }
 
+const LANGUAGE_DIRECTIVE = {
+  en: 'English',
+  'roman-ur': 'Roman Urdu (Urdu written in English letters)',
+  ur: 'Urdu script',
+};
+
+/**
+ * The language rule is stated in the system prompt, but smaller models follow
+ * it unreliably — and the failure is silent, answering an English question in
+ * Roman Urdu. Detecting the language here and naming it in the turn turns a
+ * judgement call into an instruction.
+ */
 function buildUserTurn(question, context) {
-  return `CONTEXT FROM lgu.edu.pk:\n\n${context}\n\n---\n\nSTUDENT'S QUESTION: ${question}`;
+  const lang = LANGUAGE_DIRECTIVE[detectLanguage(question)];
+  return (
+    `CONTEXT FROM lgu.edu.pk:\n\n${context}\n\n---\n\n` +
+    `STUDENT'S QUESTION: ${question}\n\n` +
+    `REPLY LANGUAGE: ${lang}. Write your entire answer in ${lang}.\n` +
+    `SCOPE CHECK: if this question is not about LGU admissions, refuse it in one sentence and say what you can help with instead. Do not answer it partially, and do not answer it and then add a disclaimer — writing the code or the general answer at all is the failure.`
+  );
 }
 
 // Only the last few turns — an admission chat rarely needs more.
