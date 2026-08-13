@@ -8,8 +8,21 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { FACTS } from './faq.mjs';
 
-const MODEL = process.env.CLAUDE_MODEL || 'claude-opus-5';
+const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5';
 const EFFORT = process.env.CLAUDE_EFFORT || 'low';
+
+/**
+ * Adaptive thinking and `effort` exist only on the Opus/Sonnet 4.6+ line.
+ * Sending either to Haiku 4.5 is a 400, so the cheap model — the sensible
+ * default for a public admission bot — would break the moment someone set
+ * CLAUDE_MODEL. Pick the parameters from the model instead of assuming.
+ */
+function tuningFor(model) {
+  const supportsEffort = /^claude-(opus-(5|4-[678])|sonnet-(5|4-6)|fable-5|mythos-5)/.test(model);
+  return supportsEffort
+    ? { thinking: { type: 'adaptive' }, output_config: { effort: EFFORT } }
+    : {};
+}
 
 let client;
 function getClient() {
@@ -88,8 +101,7 @@ export async function answerStream({ question, history = [], chunks, faqHint, on
     model: MODEL,
     max_tokens: 1500,
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-    thinking: { type: 'adaptive' },
-    output_config: { effort: EFFORT },
+    ...tuningFor(MODEL),
     messages,
   });
 

@@ -32,6 +32,34 @@ matches better, and it needs no API call, so tier 1 stays free. A Roman-Urdu
 synonym map (`fees`→`fee`, `dakhla`→`admission`, `kitni`→`how much`) is what
 makes "fees kitni hai" retrievable at all.
 
+## Cost
+
+Measured against the real knowledge base: a question sends roughly 2,500 input
+tokens (system prompt + ~1,400 tokens of retrieved context + recent history) and
+gets back ~350 output tokens.
+
+| Model | Per question | 7,500 questions/month |
+|---|---|---|
+| `claude-haiku-4-5` (default) | ~0.43¢ | ~$32 |
+| `claude-sonnet-5` | ~1.3¢ | ~$96 |
+| `claude-opus-5` | ~2.1¢ | ~$158 |
+
+Haiku is the default because retrieval has already located the answer — the
+model reformats retrieved facts into the student's language rather than
+reasoning from scratch, which is what small models are good at. Move up a tier
+if answers read poorly on real questions.
+
+The other dials, in order of effect:
+
+1. **The FAQ tier** — every question it catches costs nothing. Adding intents to
+   `server/faq.mjs` is the cheapest possible improvement.
+2. **`RETRIEVE_K`** — retrieved context is most of the input. Don't go below 5;
+   the combined fee-structure page starts falling out of range.
+3. **A spend limit** in the Anthropic Console, as a hard backstop.
+
+Note that adaptive thinking and `effort` only exist on the Opus/Sonnet line;
+they are omitted automatically on models that reject them.
+
 ## Setup
 
 ```bash

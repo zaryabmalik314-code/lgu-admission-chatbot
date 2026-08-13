@@ -17,6 +17,7 @@ import { answerStream, isConfigured } from './llm.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = process.env.PORT || 3000;
+const RETRIEVE_K = Number(process.env.RETRIEVE_K) || 6;
 
 const app = express();
 app.use(express.json({ limit: '64kb' }));
@@ -97,7 +98,10 @@ app.post('/api/chat', async (req, res) => {
     }
 
     // Tier 2 — retrieve, then ground the model on what we found.
-    const chunks = await search(question, 6);
+    // Retrieved context is the bulk of the input tokens, so this is the main
+    // cost dial after the model choice. Below ~5 the combined fee-structure
+    // page starts dropping out of range on program-specific fee questions.
+    const chunks = await search(question, RETRIEVE_K);
     // Header chunks ride along as context but weren't matched by the query, so
     // they don't belong in the citation list shown to the student.
     const cited = chunks.filter((c) => !c.isHeader);
