@@ -25,6 +25,22 @@
     'Scholarships available hain?',
   ];
 
+  // A stable per-browser id so the server can rate limit one person without
+  // keying on IP — the whole campus shares one NAT address, so an IP bucket
+  // would lock out everyone on the wifi at once.
+  const SESSION_KEY = 'lgu-chat-session';
+  let sessionId;
+  try {
+    sessionId = localStorage.getItem(SESSION_KEY);
+    if (!sessionId) {
+      sessionId = (crypto.randomUUID?.() || String(Math.random()).slice(2) + Date.now());
+      localStorage.setItem(SESSION_KEY, sessionId);
+    }
+  } catch {
+    // Private mode or blocked storage — fall back to a per-page-load id.
+    sessionId = String(Math.random()).slice(2) + Date.now();
+  }
+
   const host = document.createElement('div');
   host.id = 'lgu-chat-root';
   host.style.cssText = 'position:fixed;z-index:2147483000;bottom:0;right:0;';
@@ -264,9 +280,17 @@
     try {
       const res = await fetch(`${API}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-lgu-session': sessionId },
         body: JSON.stringify({ message: question, history: history.slice(-6) }),
       });
+
+      // Rate limiting replies with JSON, not a stream — show its message
+      // rather than the generic connection error.
+      if (res.status === 429) {
+        const body = await res.json().catch(() => ({}));
+        bubble.innerHTML = md(body.message || 'Thodi der baad koshish karein.');
+        return;
+      }
 
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
 

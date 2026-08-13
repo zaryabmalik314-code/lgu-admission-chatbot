@@ -151,9 +151,31 @@ the scrape does not need to run at deploy time.
   chunk so the model can see the labels, and the system prompt tells it to
   recommend confirming fees with the Admission Office. Program-specific pages
   (e.g. `/bs-se-fee-structure/`) do not have this problem.
-- **The LLM tier has not been run end-to-end.** No API key was available while
-  building, so tiers 1 and 3 (FAQ, retrieval, widget, streaming) are verified
-  working, but the Claude call itself has not been exercised against the live
-  API. Test it once with a key before going live.
-- No rate limiting. Add one before this is publicly linked.
+- **Only the Groq path has been run end-to-end.** Verified against live
+  questions with `llama-3.3-70b-versatile`, including that quoted fees match
+  the source page. The Anthropic path shares the same code around it but has
+  not been exercised against the live API.
+- **Vague questions are answered by asking back.** "How much is the fee?" with
+  no program named returns a clarifying question rather than a number, because
+  every faculty has a different fee table and picking one would read as
+  authoritative while being wrong for most readers.
 - Answers are only as current as the last scrape.
+
+## Rate limiting
+
+Two independent limits, neither keyed on IP — the whole campus sits behind one
+NAT address, so an IP bucket would lock out every student on the wifi at once.
+
+| Limit | Default | Keyed on |
+|---|---|---|
+| Per session | 20 per 5 min | A browser id in `localStorage` |
+| Global | 500 per hour | Everything |
+
+Session ids are client-generated and therefore spoofable; that's acceptable
+because the per-session limit exists to stop one person hammering the widget,
+which is the realistic case. The global limit is what actually protects the API
+bill. Both are tunable via `RATE_*` environment variables.
+
+Counters are in memory, so they reset on redeploy and each instance counts its
+own traffic. That's the right trade for a single small service — reach for Redis
+only if this ever runs more than one instance.

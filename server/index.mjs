@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 import { search, loadIndex } from './retrieve.mjs';
 import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS } from './faq.mjs';
+import { checkRateLimit, rateLimitStats } from './ratelimit.mjs';
 import { answerStream, isConfigured, describeProvider } from './llm.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -37,6 +38,7 @@ app.use(
       if (!ALLOWED.length) return cb(null, true); // unset = open (dev)
       cb(null, ALLOWED.includes(origin));
     },
+    allowedHeaders: ['Content-Type', 'x-lgu-session'],
   })
 );
 
@@ -53,6 +55,7 @@ app.get('/api/health', async (req, res) => {
     source: idx.source,
     llm: describeProvider(),
     llmReady: isConfigured() ? true : 'missing API key — running FAQ-only',
+    rate: rateLimitStats(),
   });
 });
 
@@ -79,6 +82,17 @@ app.post('/api/chat', async (req, res) => {
 
   if (!question) {
     return res.status(400).json({ error: 'message is required' });
+  }
+
+  // Checked before any work is done, so a blocked request costs nothing.
+  const limit = checkRateLimit(req.get('x-lgu-session'));
+  if (!limit.allowed) {
+    const msg =
+      limit.scope === 'global'
+        ? `Abhi bohot zyada sawal aa rahe hain. Thodi der baad koshish karein, ya Admission Office se rabta karein: ${FACTS.admissionOffice}`
+        : `Aap ne bohot tezi se kai sawal poochh liye. Thodi der ruk kar dobara koshish karein.`;
+    res.set('Retry-After', String(limit.retryAfter));
+    return res.status(429).json({ error: 'rate_limited', scope: limit.scope, message: msg });
   }
 
   const stream = sse(res);

@@ -38,16 +38,59 @@ export function detectLanguage(text) {
   return ROMAN_URDU_MARKERS.test(text) ? 'roman-ur' : 'en';
 }
 
+// A program name in the question means program-specific numbers are wanted.
+const PROGRAM_PATTERN =
+  /\b(bscs|bsse|bsit|bsds|bsai|bba|mba|bsaf|adp|post.?adp|m\.?phil|mphil|ph\.?d|phd|ms|bs)\b|\b(computer science|software engineering|information technology|data science|artificial intelligence|cyber ?security|psychology|english|urdu|chemistry|physics|math(ematics)?|zoology|botany|microbiology|biotech(nology)?|biochemistry|nutrition|criminology|forensic|economics|islamic|business administration|accounting|mass ?com|media|international relations)\b/i;
+
+export function mentionsProgram(query) {
+  return PROGRAM_PATTERN.test(query);
+}
+
 /**
  * Each intent needs `any` (at least one must appear) and optionally `all`
- * (every one must appear). Patterns run against the lowercased query, so they
- * cover Roman Urdu spellings alongside English.
+ * (every one must appear), and may set `unless` to suppress itself. Patterns
+ * run against the lowercased query, so they cover Roman Urdu spellings
+ * alongside English.
  *
  * `answer` is Roman Urdu, `answerEn` is English. LGU takes international
  * students and plenty of applicants write in English, so serving one canned
  * language to everyone answers half of them in a language they didn't use.
  */
 const INTENTS = [
+  {
+    // "fees kitni hai?" with no program named. Every faculty has a different
+    // fee table, so there is no single right answer — left to the model it
+    // picks numbers from whichever tables retrieval happened to return, which
+    // reads as authoritative and is wrong for most readers. Asking which
+    // program is both cheaper and more useful.
+    id: 'fee-vague',
+    any: [/\bfees?\b/, /\bfis\b/, /kharcha/, /learning investment/, /how much.*(cost|pay)/, /kitni.*(fee|paisa)/],
+    unless: mentionsProgram,
+    answer: `Fee har program ke liye alag hai. Aap kis program ke baare mein poochh rahe hain?
+
+Misal ke tor par:
+- BSCS / BSSE / BSIT / BS Data Science / BS AI
+- BBA / MBA / BS Accounting & Finance
+- BS Psychology / BS English / BS Criminology
+- MS / M.Phil / PhD
+
+Program ka naam batayein, main us ki poori fee structure bata deta hoon.
+
+Ya poori list yahan hai: ${FACTS.feeUrl}`,
+    answerEn: `Fees differ by program. Which program are you asking about?
+
+For example:
+- BSCS / BSSE / BSIT / BS Data Science / BS AI
+- BBA / MBA / BS Accounting & Finance
+- BS Psychology / BS English / BS Criminology
+- MS / M.Phil / PhD
+
+Tell me the program and I'll give you its full fee structure.
+
+Or see the full list here: ${FACTS.feeUrl}`,
+    sources: [FACTS.feeUrl],
+    skipRetrieval: true,
+  },
   {
     id: 'apply-how',
     any: [/how (do i |can i |to )?apply/, /apply (online|kaise|kese)/, /admission form/, /dakhla kaise/, /form (kahan|kaise|kese)/],
@@ -208,6 +251,7 @@ export function matchFaq(query) {
     const anyHit = intent.any.some((re) => re.test(q));
     if (!anyHit) continue;
     if (intent.all && !intent.all.every((re) => re.test(q))) continue;
+    if (intent.unless?.(q)) continue;
 
     // Urdu script gets the Roman Urdu text rather than an English answer —
     // same language, just a different script, so it's much the closer match.
@@ -228,13 +272,9 @@ export function isNarrowEnoughForCannedAnswer(query, faq) {
   if (faq.skipRetrieval) return true;
   const q = query.toLowerCase();
 
-  // A program name in the question almost always means program-specific
-  // numbers are wanted, which the canned answers don't carry.
-  const mentionsProgram =
-    /\b(bscs|bsse|bsit|bsds|bsai|bba|mba|bs\s|ms\s|m\.?phil|phd|adp|psychology|english|urdu|chemistry|physics|math|zoology|microbio|biotech|criminology|economics|islamic)/i.test(
-      q
-    );
-  if (mentionsProgram) return false;
+  // A program name almost always means program-specific numbers are wanted,
+  // which the canned answers don't carry.
+  if (mentionsProgram(q)) return false;
 
   // Compound questions ("aur", "also", "?") usually need more than one answer.
   if ((q.match(/\?/g) || []).length > 1) return false;
