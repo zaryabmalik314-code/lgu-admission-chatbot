@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 import { search, loadIndex } from './retrieve.mjs';
 import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS } from './faq.mjs';
-import { answerStream, isConfigured } from './llm.mjs';
+import { answerStream, isConfigured, describeProvider } from './llm.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = process.env.PORT || 3000;
@@ -51,7 +51,8 @@ app.get('/api/health', async (req, res) => {
     chunks: idx.docs.length,
     scrapedAt: idx.scrapedAt,
     source: idx.source,
-    llm: isConfigured() ? 'configured' : 'missing ANTHROPIC_API_KEY (FAQ-only mode)',
+    llm: describeProvider(),
+    llmReady: isConfigured() ? true : 'missing API key — running FAQ-only',
   });
 });
 
@@ -154,5 +155,6 @@ app.listen(PORT, () => {
   console.log(`LGU admission chatbot on http://localhost:${PORT}`);
   console.log(`  demo:   http://localhost:${PORT}/demo/`);
   console.log(`  widget: http://localhost:${PORT}/widget.js`);
-  if (!isConfigured()) console.log('  NOTE: ANTHROPIC_API_KEY not set — running FAQ-only.');
+  console.log(`  model:  ${describeProvider()}`);
+  if (!isConfigured()) console.log('  NOTE: no API key set — running FAQ-only.');
 });

@@ -32,33 +32,54 @@ matches better, and it needs no API call, so tier 1 stays free. A Roman-Urdu
 synonym map (`fees`→`fee`, `dakhla`→`admission`, `kitni`→`how much`) is what
 makes "fees kitni hai" retrievable at all.
 
-## Cost
+## Providers and cost
 
-Measured against the real knowledge base: a question sends roughly 2,500 input
+**Groq is the default.** Set `LLM_PROVIDER=anthropic` to switch; nothing else
+changes, so the same questions can be run against both.
+
+Measured against the real knowledge base, a question sends roughly 2,500 input
 tokens (system prompt + ~1,400 tokens of retrieved context + recent history) and
-gets back ~350 output tokens.
+gets back ~350 output tokens — so cost is dominated by input.
 
-| Model | Per question | 7,500 questions/month |
+| Provider / model | Per question | 7,500 questions/month |
 |---|---|---|
-| `claude-haiku-4-5` (default) | ~0.43¢ | ~$32 |
+| Groq `llama-3.3-70b-versatile` (default) | ~0.2¢ | ~$15 |
+| Groq `llama-3.1-8b-instant` | ~0.02¢ | ~$1.50 |
+| `claude-haiku-4-5` | ~0.43¢ | ~$32 |
 | `claude-sonnet-5` | ~1.3¢ | ~$96 |
-| `claude-opus-5` | ~2.1¢ | ~$158 |
 
-Haiku is the default because retrieval has already located the answer — the
-model reformats retrieved facts into the student's language rather than
-reasoning from scratch, which is what small models are good at. Move up a tier
-if answers read poorly on real questions.
+Groq also has a free tier that covers low volume outright. Treat the figures as
+estimates and confirm against each provider's current pricing page.
 
-The other dials, in order of effect:
+### Watch Roman Urdu quality
+
+This is the one place a cheaper model is likely to disappoint, and it is the
+majority case: most students type `fees kitni hai`, not `what is the fee`. The
+failure is not a crash — the bot answers in English instead, or writes stilted
+Urdu. Before going live, ask each of these and check the reply comes back in the
+same language:
+
+```
+fees kitni hai?
+dakhla kaise lein?
+BSCS ke liye kitne marks chahiye?
+kya scholarship mil sakti hai?
+```
+
+If replies drift to English, try `GROQ_MODEL=qwen/qwen3-32b` (usually the
+strongest on Urdu of the Groq models) before giving up on the provider.
+
+Groq retires model IDs fairly often — a stale one fails at request time, so
+check <https://console.groq.com/docs/models> when a previously working model
+starts erroring.
+
+### Other cost dials
 
 1. **The FAQ tier** — every question it catches costs nothing. Adding intents to
    `server/faq.mjs` is the cheapest possible improvement.
 2. **`RETRIEVE_K`** — retrieved context is most of the input. Don't go below 5;
    the combined fee-structure page starts falling out of range.
-3. **A spend limit** in the Anthropic Console, as a hard backstop.
-
-Note that adaptive thinking and `effort` only exist on the Opus/Sonnet line;
-they are omitted automatically on models that reject them.
+3. **A spend limit** in the provider console, as a hard backstop.
 
 ## Setup
 

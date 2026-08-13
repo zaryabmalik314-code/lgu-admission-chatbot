@@ -1,37 +1,32 @@
 /**
- * Tier 2 of the hybrid brain: Claude, grounded in retrieved chunks.
+ * Tier 2 of the hybrid brain: an LLM, grounded in retrieved chunks.
  *
  * The model never answers from its own knowledge of LGU — everything it states
  * has to come from the supplied context, because the site is the only source of
  * truth for fees and deadlines and it changes every intake.
+ *
+ * Two providers sit behind one interface. Groq is the default (cheap and fast);
+ * Anthropic is kept because the thing most likely to go wrong here is Roman
+ * Urdu quality — most students type "fees kitni hai", not "what is the fee" —
+ * and being able to A/B the two on real questions with one env var is worth far
+ * more than the few lines the second implementation costs.
  */
-import Anthropic from '@anthropic-ai/sdk';
 import { FACTS } from './faq.mjs';
 
-const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5';
+const PROVIDER = (process.env.LLM_PROVIDER || 'groq').toLowerCase();
+
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5';
 const EFFORT = process.env.CLAUDE_EFFORT || 'low';
 
-/**
- * Adaptive thinking and `effort` exist only on the Opus/Sonnet 4.6+ line.
- * Sending either to Haiku 4.5 is a 400, so the cheap model — the sensible
- * default for a public admission bot — would break the moment someone set
- * CLAUDE_MODEL. Pick the parameters from the model instead of assuming.
- */
-function tuningFor(model) {
-  const supportsEffort = /^claude-(opus-(5|4-[678])|sonnet-(5|4-6)|fable-5|mythos-5)/.test(model);
-  return supportsEffort
-    ? { thinking: { type: 'adaptive' }, output_config: { effort: EFFORT } }
-    : {};
-}
-
-let client;
-function getClient() {
-  if (!client) client = new Anthropic(); // reads ANTHROPIC_API_KEY
-  return client;
-}
-
 export function isConfigured() {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+  return PROVIDER === 'anthropic'
+    ? Boolean(process.env.ANTHROPIC_API_KEY)
+    : Boolean(process.env.GROQ_API_KEY);
+}
+
+export function describeProvider() {
+  return PROVIDER === 'anthropic' ? `anthropic/${CLAUDE_MODEL}` : `groq/${GROQ_MODEL}`;
 }
 
 const SYSTEM = `You are the admissions assistant for Lahore Garrison University (LGU), Lahore, Pakistan. You are embedded as a chat widget on the LGU website and you talk to prospective students and their parents.
@@ -42,12 +37,12 @@ Answer ONLY from the CONTEXT provided in the user turn. The context is scraped f
 - Never invent scholarship amounts, seat counts, or admission dates.
 - Fees and deadlines change every intake. When you quote a fee, mention it should be confirmed with the Admission Office.
 
-## Language
-Mirror the user's language exactly:
-- English question -> English answer.
-- Roman Urdu question (e.g. "fees kitni hai") -> Roman Urdu answer, same casual register.
-- Urdu script question -> Urdu script answer.
-Never switch language mid-answer unless the user did.
+## Language — this matters most
+Reply in the SAME language the student wrote in. Decide from their message alone:
+- Plain English question -> answer in English.
+- Roman Urdu (Urdu written in English letters, e.g. "fees kitni hai", "dakhla kaise lein", "kya mujhe scholarship mil sakti hai") -> answer in Roman Urdu, same casual register. Do NOT answer such questions in English.
+- Urdu script -> answer in Urdu script.
+Never switch language part-way through an answer. Keep proper nouns, program names, and numbers as-is in every language.
 
 ## Style
 - Short. Two to five sentences, or a small markdown table for anything with numbers.
@@ -64,14 +59,96 @@ When the person is ready to apply, give them ${FACTS.applyUrl}`;
 
 function buildContext(chunks, faqHint) {
   const parts = [];
-  if (faqHint) {
-    parts.push(`[VERIFIED FACT SHEET]\n${faqHint}`);
-  }
-  for (const c of chunks) {
-    parts.push(`[SOURCE: ${c.title}]\n[URL: ${c.url}]\n${c.text}`);
-  }
+  if (faqHint) parts.push(`[VERIFIED FACT SHEET]\n${faqHint}`);
+  for (const c of chunks) parts.push(`[SOURCE: ${c.title}]\n[URL: ${c.url}]\n${c.text}`);
   return parts.join('\n\n---\n\n');
 }
+
+function buildUserTurn(question, context) {
+  return `CONTEXT FROM lgu.edu.pk:\n\n${context}\n\n---\n\nSTUDENT'S QUESTION: ${question}`;
+}
+
+// Only the last few turns — an admission chat rarely needs more.
+const recent = (history) => history.slice(-6).map((m) => ({ role: m.role, content: m.content }));
+
+/* ------------------------------- Groq -------------------------------- */
+
+let groqClient;
+async function streamGroq({ question, history, context, onDelta }) {
+  if (!groqClient) {
+    const { default: Groq } = await import('groq-sdk');
+    groqClient = new Groq(); // reads GROQ_API_KEY
+  }
+
+  const stream = await groqClient.chat.completions.create({
+    model: GROQ_MODEL,
+    stream: true,
+    max_tokens: 1200,
+    // Low but not zero: these are factual answers read off a fee table, and
+    // the phrasing still has to sound like a person rather than a form.
+    temperature: 0.3,
+    messages: [
+      { role: 'system', content: SYSTEM },
+      ...recent(history),
+      { role: 'user', content: buildUserTurn(question, context) },
+    ],
+  });
+
+  let full = '';
+  for await (const chunk of stream) {
+    const delta = chunk.choices?.[0]?.delta?.content;
+    if (!delta) continue;
+    full += delta;
+    onDelta(delta);
+  }
+  return full;
+}
+
+/* ----------------------------- Anthropic ------------------------------ */
+
+let anthropicClient;
+
+/**
+ * Adaptive thinking and `effort` exist only on the Opus/Sonnet 4.6+ line;
+ * sending either to Haiku 4.5 is a 400.
+ */
+function claudeTuning(model) {
+  const supported = /^claude-(opus-(5|4-[678])|sonnet-(5|4-6)|fable-5|mythos-5)/.test(model);
+  return supported
+    ? { thinking: { type: 'adaptive' }, output_config: { effort: EFFORT } }
+    : {};
+}
+
+async function streamAnthropic({ question, history, context, onDelta }) {
+  if (!anthropicClient) {
+    const { default: Anthropic } = await import('@anthropic-ai/sdk');
+    anthropicClient = new Anthropic(); // reads ANTHROPIC_API_KEY
+  }
+
+  const stream = anthropicClient.messages.stream({
+    model: CLAUDE_MODEL,
+    max_tokens: 1200,
+    system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+    ...claudeTuning(CLAUDE_MODEL),
+    messages: [
+      ...recent(history),
+      { role: 'user', content: buildUserTurn(question, context) },
+    ],
+  });
+
+  stream.on('text', (delta) => onDelta(delta));
+  const final = await stream.finalMessage();
+
+  if (final.stop_reason === 'refusal') {
+    const fallback = `Is sawal ka jawab main nahi de sakta. Admission Office se rabta karein: ${FACTS.admissionOffice}`;
+    onDelta(fallback);
+    return fallback;
+  }
+
+  return final.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
+}
+
+/* ------------------------------ dispatch ------------------------------ */
 
 /**
  * Streams an answer as text deltas.
@@ -86,37 +163,6 @@ function buildContext(chunks, faqHint) {
  */
 export async function answerStream({ question, history = [], chunks, faqHint, onDelta }) {
   const context = buildContext(chunks, faqHint);
-
-  const messages = [
-    // Only the last few turns — an admission chat rarely needs more, and it
-    // keeps the cached system prefix doing the heavy lifting.
-    ...history.slice(-6).map((m) => ({ role: m.role, content: m.content })),
-    {
-      role: 'user',
-      content: `CONTEXT FROM lgu.edu.pk:\n\n${context}\n\n---\n\nSTUDENT'S QUESTION: ${question}`,
-    },
-  ];
-
-  const stream = getClient().messages.stream({
-    model: MODEL,
-    max_tokens: 1500,
-    system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-    ...tuningFor(MODEL),
-    messages,
-  });
-
-  stream.on('text', (delta) => onDelta(delta));
-
-  const final = await stream.finalMessage();
-
-  if (final.stop_reason === 'refusal') {
-    const fallback = `Is sawal ka jawab main nahi de sakta. Admission Office se rabta karein: ${FACTS.admissionOffice}`;
-    onDelta(fallback);
-    return fallback;
-  }
-
-  return final.content
-    .filter((b) => b.type === 'text')
-    .map((b) => b.text)
-    .join('');
+  const args = { question, history, context, onDelta };
+  return PROVIDER === 'anthropic' ? streamAnthropic(args) : streamGroq(args);
 }
