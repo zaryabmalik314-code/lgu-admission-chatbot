@@ -407,6 +407,45 @@ After the test, the merit list is published at ${FACTS.meritUrl}`,
     sources: [FACTS.testUrl],
   },
   {
+    // Students type this as a direct choice between two similarly-named
+    // undergrad programs. Both are 4-year BS degrees — retrieval has
+    // repeatedly confused "BS AI" with the unrelated MS(AI) graduate program
+    // (LGU's own site even mislabels the BS AI page's URL slug as an IT
+    // roadmap), so this is answered here with verified facts rather than
+    // left to chunk retrieval.
+    id: 'cmai-vs-bsai',
+    any: [
+      /\bcmai\b[^.?!]{0,20}\b(or|vs\.?|versus|ya)\b[^.?!]{0,20}\b(bs\s*ai|bsai|ai|artificial intelligence)\b/,
+      /\b(bs\s*ai|bsai|ai|artificial intelligence)\b[^.?!]{0,20}\b(or|vs\.?|versus|ya)\b[^.?!]{0,20}\bcmai\b/,
+      /difference between cmai and (bs\s*ai|bsai|ai|artificial intelligence)/,
+      /cmai.*(better|different|same).*\b(bs\s*ai|bsai|ai)\b/,
+    ],
+    answer: `CMAI aur BS AI dono alag 4-year BS degrees hain — donon HEC/NCEAC recognized hain, lekin department aur focus different hai:
+
+**BS Computational Mathematics & AI (CMAI)** — Department of Mathematics, 135 credit hours. Applied math + AI ka combination — theory, modeling, algorithms ki strong base.
+
+**BS Artificial Intelligence (BS AI)** — Computer Science faculty, NCEAC accredited, 131 credit hours. Programming/software engineering-heavy — AI specifically as a CS major.
+
+Note: MS (AI) ek alag cheez hai — woh 2-year graduate degree hai, inn dono BS programs se unrelated.
+
+Agar math/theory pasand hai to CMAI, agar coding/software pasand hai to BS AI zyada fit karega. Dono ki fee: ${FACTS.feeUrl}
+Apply: ${FACTS.applyUrl}`,
+    answerEn: `CMAI and BS AI are two separate 4-year BS degrees — both are recognized (HEC/NCEAC), but they differ in department and focus:
+
+**BS Computational Mathematics & AI (CMAI)** — Department of Mathematics, 135 credit hours. Blends applied math with AI — strong grounding in theory, modeling, and algorithms.
+
+**BS Artificial Intelligence (BS AI)** — Computer Science faculty, NCEAC accredited, 131 credit hours. Programming/software-engineering-heavy — AI as a dedicated CS major.
+
+Note: MS (AI) is a different program entirely — a 2-year graduate degree, unrelated to either of these BS programs.
+
+If you lean toward math/theory, CMAI fits better; if you lean toward coding/software, BS AI is the closer match. Fee structure: ${FACTS.feeUrl}
+Apply: ${FACTS.applyUrl}`,
+    sources: [
+      'https://lgu.edu.pk/bs-mathematics-in-computational-mathematics-and-artificial-intelligence/',
+      'https://lgu.edu.pk/bs-information-technology-road-map-2/',
+    ],
+  },
+  {
     id: 'cmai-scope',
     any: [
       /cmai.*(scope|career|job|future|salary|demand|placement)/,
