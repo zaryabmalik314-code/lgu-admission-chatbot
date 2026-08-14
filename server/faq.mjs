@@ -70,6 +70,7 @@ const STREAMS = [
     re: /\b(ics|i\.?c\.?s\.?|pre.?comp|comp(uter)?\s*science)\b/i,
     label: 'ICS (computer science)',
     programs: [
+      'BS Computational Mathematics & AI (CMAI) — HEC-recognized',
       'BS Computer Science (BSCS)',
       'BS Software Engineering (BSSE)',
       'BS Information Technology (BSIT)',
@@ -289,6 +290,11 @@ Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`,
       // Bare marks statements — the common follow-up. "i got 60", "scored 55",
       // "mere 60", "60%", "60 marks", or a message that's just "60". These
       // inherit the stream from earlier turns via buildAdvisingAnswer.
+      // Bare stream name — "ics", "pre medical", "fsc pre eng". A student
+      // who types just their intermediate stream clearly wants to know which
+      // LGU programs fit; without this they fall to retrieval which matches
+      // wrong chunks (e.g. Physics for "ics").
+      /^\s*(ics|i\.?c\.?s\.?|fsc|f\.?s\.?c\.?|pre.?med(ical)?|pre.?eng(ineer)?(ing)?|i\.?com|icom|d\.?com|f\.?a\.?)\s*[?.!]*\s*$/i,
       /\b(got|scored|liye|liya|have|hain?)\s+\d{2,3}\b/i,
       /\bmere?\s+\d{2,3}\b/i,
       /\b\d{2,3}\s*(%|percent|fisad|marks?)\b/i,
