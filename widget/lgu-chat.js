@@ -249,7 +249,7 @@
           </div>
           <div class="meta">
             <div class="t">${TITLE}</div>
-            <div class="s"><span class="live"></span>Online · replies instantly</div>
+            <div class="s"><span class="live"></span>Online</div>
           </div>
           <button class="close" aria-label="Close">&times;</button>
         </header>
