@@ -451,6 +451,12 @@ Contact the Admission Office for eligibility and how to apply: ${FACTS.admission
 - Admission Office: ${FACTS.admissionOffice}
 - Email: ${FACTS.email}`,
     sources: ['https://lgu.edu.pk/contact/'],
+    // These facts never vary by program, so a query like "CMAI number" must not
+    // fall through to the LLM tier just because it names a program — that tier
+    // sees conversation history, and if the creator intent fired earlier in the
+    // same session, the model can leak the developer's personal number into an
+    // unrelated contact answer.
+    skipRetrieval: true,
   },
   {
     id: 'merit-list',
