@@ -41,19 +41,28 @@ failure seen in use:
 
 ## Providers and cost
 
-**Groq is the default.** Set `LLM_PROVIDER=anthropic` to switch; nothing else
-changes, so the same questions can be run against both.
+**Three providers behind one interface**, chosen with `LLM_PROVIDER` — `groq`
+(default), `gemini`, or `anthropic`. Nothing else changes, so the same questions
+can be run against any of them to compare quality. Only the selected provider's
+API key is needed.
 
 Measured against the real knowledge base, a question sends roughly 2,500 input
 tokens (system prompt + ~1,400 tokens of retrieved context + recent history) and
 gets back ~350 output tokens — so cost is dominated by input.
 
-| Provider / model | Per question | 7,500 questions/month |
-|---|---|---|
-| Groq `llama-3.3-70b-versatile` (default) | ~0.2¢ | ~$15 |
-| Groq `llama-3.1-8b-instant` | ~0.02¢ | ~$1.50 |
-| `claude-haiku-4-5` | ~0.43¢ | ~$32 |
-| `claude-sonnet-5` | ~1.3¢ | ~$96 |
+| Provider / model | Free tier | Paid, per question | 7,500 q/month |
+|---|---|---|---|
+| **Gemini** `gemini-2.5-flash` | **~1,500 q/day, no card** | ~0.1¢ | ~$7 |
+| Groq `llama-3.3-70b-versatile` (default) | 100k tokens/day (~40 q) | ~0.2¢ | ~$15 |
+| Groq `llama-3.1-8b-instant` | same | ~0.02¢ | ~$1.50 |
+| `claude-haiku-4-5` | — | ~0.43¢ | ~$32 |
+| `claude-sonnet-5` | — | ~1.3¢ | ~$96 |
+
+**Gemini has by far the most generous free tier** — ~1,500 questions/day with no
+credit card — so it can run the bot for free through most of the year, only
+overflowing at peak intake. Get a key at <https://aistudio.google.com/apikey>.
+Groq's free tier is a 100k-token *daily* cap (~40 questions), so for Groq a paid
+Dev tier is needed for real volume.
 
 ### The Groq free tier is a daily token cap, not a request count
 

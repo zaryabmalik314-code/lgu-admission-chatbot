@@ -5,28 +5,34 @@
  * has to come from the supplied context, because the site is the only source of
  * truth for fees and deadlines and it changes every intake.
  *
- * Two providers sit behind one interface. Groq is the default (cheap and fast);
- * Anthropic is kept because the thing most likely to go wrong here is Roman
- * Urdu quality — most students type "fees kitni hai", not "what is the fee" —
- * and being able to A/B the two on real questions with one env var is worth far
- * more than the few lines the second implementation costs.
+ * Three providers sit behind one interface, chosen with LLM_PROVIDER:
+ *   groq       (default) cheap and fast
+ *   gemini     the most generous free tier by far — ~1,500 requests/day free,
+ *              no card — so it can run the whole bot for free most of the year
+ *   anthropic  the quality benchmark
+ * The thing most likely to differ between them is Roman Urdu quality — most
+ * students type "fees kitni hai", not "what is the fee" — so being able to A/B
+ * them on real questions with one env var is worth far more than the few lines
+ * each implementation costs.
  */
 import { FACTS, detectLanguage } from './faq.mjs';
 
 const PROVIDER = (process.env.LLM_PROVIDER || 'groq').toLowerCase();
 
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5';
 const EFFORT = process.env.CLAUDE_EFFORT || 'low';
 
+const KEY_ENV = { groq: 'GROQ_API_KEY', gemini: 'GEMINI_API_KEY', anthropic: 'ANTHROPIC_API_KEY' };
+const MODEL_OF = { groq: GROQ_MODEL, gemini: GEMINI_MODEL, anthropic: CLAUDE_MODEL };
+
 export function isConfigured() {
-  return PROVIDER === 'anthropic'
-    ? Boolean(process.env.ANTHROPIC_API_KEY)
-    : Boolean(process.env.GROQ_API_KEY);
+  return Boolean(process.env[KEY_ENV[PROVIDER] || 'GROQ_API_KEY']);
 }
 
 export function describeProvider() {
-  return PROVIDER === 'anthropic' ? `anthropic/${CLAUDE_MODEL}` : `groq/${GROQ_MODEL}`;
+  return `${PROVIDER}/${MODEL_OF[PROVIDER] || GROQ_MODEL}`;
 }
 
 const SYSTEM = `You are the admissions assistant for Lahore Garrison University (LGU), Lahore, Pakistan. You are embedded as a chat widget on the LGU website and you talk to prospective students and their parents.
@@ -127,6 +133,45 @@ async function streamGroq({ question, history, context, onDelta }) {
   return full;
 }
 
+/* ------------------------------- Gemini ------------------------------ */
+
+let geminiClient;
+async function streamGemini({ question, history, context, onDelta }) {
+  if (!geminiClient) {
+    const { GoogleGenAI } = await import('@google/genai');
+    geminiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  }
+
+  // Gemini uses 'model' where the others use 'assistant', and system text goes
+  // in config.systemInstruction rather than in the message list.
+  const contents = [
+    ...recent(history).map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    })),
+    { role: 'user', parts: [{ text: buildUserTurn(question, context) }] },
+  ];
+
+  const stream = await geminiClient.models.generateContentStream({
+    model: GEMINI_MODEL,
+    contents,
+    config: {
+      systemInstruction: SYSTEM,
+      temperature: 0.3,
+      maxOutputTokens: 1200,
+    },
+  });
+
+  let full = '';
+  for await (const chunk of stream) {
+    const delta = chunk.text;
+    if (!delta) continue;
+    full += delta;
+    onDelta(delta);
+  }
+  return full;
+}
+
 /* ----------------------------- Anthropic ------------------------------ */
 
 let anthropicClient;
@@ -187,5 +232,7 @@ async function streamAnthropic({ question, history, context, onDelta }) {
 export async function answerStream({ question, history = [], chunks, faqHint, onDelta }) {
   const context = buildContext(chunks, faqHint);
   const args = { question, history, context, onDelta };
-  return PROVIDER === 'anthropic' ? streamAnthropic(args) : streamGroq(args);
+  if (PROVIDER === 'anthropic') return streamAnthropic(args);
+  if (PROVIDER === 'gemini') return streamGemini(args);
+  return streamGroq(args);
 }
