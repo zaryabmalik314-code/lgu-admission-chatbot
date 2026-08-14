@@ -153,10 +153,27 @@ One tag before `</body>`:
 The widget ships with the LGU theme by default — deep green (`#14532d`) header
 and bubble, gold (`#f4b41a`) send button — matching the admission site's green
 structure and gold "Apply Now" buttons. Override if needed:
-`data-accent` (primary green), `data-gold` (accent), `data-title`.
+`data-accent` (primary green), `data-gold` (accent), `data-title`,
+`data-voice-lang` (speech-recognition language, default `ur-PK`).
 
 The widget renders inside a shadow root, so the site's own theme CSS (Avada, on
 lgu.edu.pk) can't restyle it and it can't leak styles back into the page.
+
+## Voice
+
+Built in, browser-native, no cost or keys:
+
+- **Voice input** — the mic button starts speech recognition; the spoken words
+  fill the box and send. Set `data-voice-lang="en-US"` for an English-speaking
+  audience (default `ur-PK` transcribes spoken Urdu to Urdu script, which the
+  bot answers in kind).
+- **Voice output** — the speaker toggle in the header reads answers aloud
+  (off by default; markdown is stripped so tables aren't read as punctuation).
+
+Uses the Web Speech API. Full support on Chrome/Edge and Android Chrome; the mic
+button hides itself on browsers without speech recognition (mainly Firefox).
+Speech synthesis quality for Urdu depends on the voices installed on the
+device.
 
 ## Layout
 

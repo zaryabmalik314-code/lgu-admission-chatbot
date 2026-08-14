@@ -21,6 +21,10 @@
   const ACCENT = script?.dataset.accent || '#14532d';
   const GOLD = script?.dataset.gold || '#f4b41a';
   const TITLE = script?.dataset.title || 'LGU Admissions';
+  // Speech-recognition language. Urdu (ur-PK) transcribes spoken Urdu to Urdu
+  // script, which the bot handles; set data-voice-lang="en-US" for an
+  // English-speaking audience.
+  const VOICE_LANG = script?.dataset.voiceLang || 'ur-PK';
 
   const SUGGESTIONS = [
     'BSCS ki fee kitni hai?',
@@ -85,10 +89,16 @@
       }
       header .t { font-weight: 600; font-size: 15px; }
       header .s { font-size: 12px; opacity: .82; }
-      header button {
-        margin-left: auto; background: transparent; border: 0; color: #fff;
+      header .close {
+        background: transparent; border: 0; color: #fff;
         font-size: 22px; line-height: 1; cursor: pointer; opacity: .85; padding: 0 4px;
       }
+      header .tts {
+        margin-left: auto; background: transparent; border: 0; color: #fff;
+        cursor: pointer; opacity: .6; padding: 4px 6px; display: grid; place-items: center;
+      }
+      header .tts:hover { opacity: .85; }
+      header .tts.on { opacity: 1; color: ${GOLD}; }
 
       .log { flex: 1; overflow-y: auto; padding: 16px; background: #f7f8f7; }
       .msg { margin-bottom: 12px; display: flex; }
@@ -140,6 +150,19 @@
       }
       form button:hover { filter: brightness(1.05); }
       form button:disabled { opacity: .45; cursor: default; }
+      /* Mic — neutral until listening, then pulses red so it's obvious it's live. */
+      .mic {
+        background: #eef2ef; color: #40514a; border: 0; border-radius: 50%;
+        width: 40px; height: 40px; cursor: pointer; flex-shrink: 0;
+        display: grid; place-items: center;
+      }
+      .mic:hover { background: #e2e9e3; }
+      .mic.listening { background: #e53935; color: #fff; animation: pulse 1.3s infinite; }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(229,57,53,.5); }
+        70% { box-shadow: 0 0 0 9px rgba(229,57,53,0); }
+        100% { box-shadow: 0 0 0 0 rgba(229,57,53,0); }
+      }
 
       @media (max-width: 480px) {
         .wrap { bottom: 14px; right: 14px; }
@@ -154,11 +177,17 @@
             <div class="t">${TITLE}</div>
             <div class="s">Fees · Criteria · Apply</div>
           </div>
+          <button class="tts" aria-label="Read answers aloud" title="Read answers aloud">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4z"/></svg>
+          </button>
           <button class="close" aria-label="Close">&times;</button>
         </header>
         <div class="log"></div>
         <form>
-          <input type="text" placeholder="Apna sawal likhein..." autocomplete="off" />
+          <button type="button" class="mic" aria-label="Speak your question" title="Speak your question">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 15a3 3 0 003-3V6a3 3 0 00-6 0v6a3 3 0 003 3z"/><path d="M17 12a5 5 0 01-10 0H5a7 7 0 006 6.92V22h2v-3.08A7 7 0 0019 12h-2z"/></svg>
+          </button>
+          <input type="text" dir="auto" placeholder="Apna sawal likhein..." autocomplete="off" />
           <button type="submit" aria-label="Send">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
           </button>
@@ -356,6 +385,7 @@
       }
 
       history.push({ role: 'user', content: question }, { role: 'assistant', content: answer });
+      speak(answer);
     } catch (err) {
       bubble.innerHTML = md(
         'Server se rabta nahi ho saka. Admission Office: 042-37181823'
@@ -387,4 +417,99 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') panel.classList.remove('open');
   });
+
+  /* ---------------------------- Voice input --------------------------- */
+  // Browser-native speech recognition — no server, no key, no cost. Hidden
+  // entirely on browsers that don't support it (mainly Firefox).
+  const micBtn = $('.mic');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    micBtn.style.display = 'none';
+  } else {
+    let rec = null;
+    let listening = false;
+
+    micBtn.addEventListener('click', () => {
+      if (listening) {
+        rec?.stop();
+        return;
+      }
+      rec = new SR();
+      rec.lang = VOICE_LANG;
+      rec.interimResults = true; // show words in the box as they're recognised
+      rec.continuous = false; // one question per tap
+
+      rec.onstart = () => {
+        listening = true;
+        micBtn.classList.add('listening');
+        input.placeholder = 'Sun raha hoon…';
+      };
+      rec.onresult = (e) => {
+        input.value = Array.from(e.results)
+          .map((r) => r[0].transcript)
+          .join('');
+      };
+      rec.onend = () => {
+        listening = false;
+        micBtn.classList.remove('listening');
+        input.placeholder = 'Apna sawal likhein...';
+        const q = input.value.trim();
+        if (q) {
+          input.value = '';
+          ask(q); // auto-send what was spoken
+        }
+      };
+      rec.onerror = () => {
+        listening = false;
+        micBtn.classList.remove('listening');
+        input.placeholder = 'Apna sawal likhein...';
+      };
+      try {
+        rec.start();
+      } catch {
+        /* start() throws if already running — ignore */
+      }
+    });
+  }
+
+  /* ---------------------------- Voice output -------------------------- */
+  // Off by default — auto-playing audio is intrusive. The header speaker
+  // toggles it; when on, each answer is read aloud.
+  const ttsBtn = $('.tts');
+  let ttsOn = false;
+  const canSpeak = 'speechSynthesis' in window;
+  if (!canSpeak) {
+    ttsBtn.style.display = 'none';
+  } else {
+    ttsBtn.addEventListener('click', () => {
+      ttsOn = !ttsOn;
+      ttsBtn.classList.toggle('on', ttsOn);
+      if (!ttsOn) speechSynthesis.cancel();
+    });
+  }
+
+  function speak(text) {
+    if (!ttsOn || !canSpeak || !text) return;
+    // Strip markdown so tables and links don't get read as punctuation soup.
+    const clean = text
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [label](url) -> label
+      .replace(/https?:\/\/\S+/g, '') // bare URLs
+      .replace(/[|#*`_>]/g, ' ') // table pipes, markdown marks
+      .replace(/^[\s-]+/gm, '') // list bullets / rules
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!clean) return;
+
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(clean);
+    // Urdu script -> an Urdu voice if the device has one; otherwise default.
+    const lang = /[؀-ۿ]/.test(text) ? 'ur-PK' : 'en-US';
+    u.lang = lang;
+    const voices = speechSynthesis.getVoices();
+    u.voice =
+      voices.find((v) => v.lang === lang) ||
+      voices.find((v) => v.lang.startsWith(lang.slice(0, 2))) ||
+      null;
+    speechSynthesis.speak(u);
+  }
 })();
