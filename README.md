@@ -141,7 +141,10 @@ One tag before `</body>`:
         data-api="https://YOUR-BACKEND"></script>
 ```
 
-Optional: `data-accent="#0b5d3b"`, `data-title="LGU Admissions"`.
+The widget ships with the LGU theme by default — deep green (`#14532d`) header
+and bubble, gold (`#f4b41a`) send button — matching the admission site's green
+structure and gold "Apply Now" buttons. Override if needed:
+`data-accent` (primary green), `data-gold` (accent), `data-title`.
 
 The widget renders inside a shadow root, so the site's own theme CSS (Avada, on
 lgu.edu.pk) can't restyle it and it can't leak styles back into the page.

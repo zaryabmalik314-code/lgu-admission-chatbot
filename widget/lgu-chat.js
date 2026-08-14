@@ -15,7 +15,11 @@
 
   const script = document.currentScript;
   const API = (script?.dataset.api || new URL(script.src).origin).replace(/\/$/, '');
-  const ACCENT = script?.dataset.accent || '#0b5d3b';
+  // Matches the LGU admission site: deep green structure + gold call-to-action.
+  // ACCENT drives the header, bubble and the student's own messages; GOLD is the
+  // send button and interactive highlights, echoing the site's "Apply Now".
+  const ACCENT = script?.dataset.accent || '#14532d';
+  const GOLD = script?.dataset.gold || '#f4b41a';
   const TITLE = script?.dataset.title || 'LGU Admissions';
 
   const SUGGESTIONS = [
@@ -112,7 +116,7 @@
         background: #fff; border: 1px solid #d8ded8; border-radius: 999px;
         padding: 6px 11px; font-size: 13px; cursor: pointer; color: #23302a;
       }
-      .chip:hover { border-color: ${ACCENT}; }
+      .chip:hover { border-color: ${GOLD}; background: #fffdf5; }
 
       .dots span {
         display: inline-block; width: 6px; height: 6px; margin-right: 3px;
@@ -127,12 +131,14 @@
         flex: 1; padding: 10px 13px; border: 1px solid #d8ded8; border-radius: 22px;
         font: inherit; outline: none; min-width: 0;
       }
-      input:focus { border-color: ${ACCENT}; }
+      input:focus { border-color: ${GOLD}; }
+      /* Gold send button with dark-green icon — mirrors the site's "Apply Now". */
       form button {
-        background: ${ACCENT}; color: #fff; border: 0; border-radius: 50%;
+        background: ${GOLD}; color: ${ACCENT}; border: 0; border-radius: 50%;
         width: 40px; height: 40px; cursor: pointer; flex-shrink: 0;
         display: grid; place-items: center;
       }
+      form button:hover { filter: brightness(1.05); }
       form button:disabled { opacity: .45; cursor: default; }
 
       @media (max-width: 480px) {
