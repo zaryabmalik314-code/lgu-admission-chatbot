@@ -440,15 +440,15 @@ Full list here: ${FACTS.admissionsUrl}`,
   {
     id: 'creator',
     any: [
-      /who (made|built|created|developed|designed) (you|this|this bot|this chatbot)/,
+      /who (made|makes|build|builds|built|create|creates|created|develop|develops|developed|design|designs|designed) (you|this|this bot|this chatbot)/,
       /who is your (creator|developer|maker)/,
       /(tumhe|tumhein|aapko|apko) kis ne (banaya|develop kiya)/,
       /ye bot kis ne banaya/,
     ],
-    answer: `Mujhe Zaryab Malik ne banaya hai.
+    answer: `Mujhe Zaryab Malik ne banaya hai — woh khud LGU mein BS Computational Mathematics & AI (CMAI) ke 2nd semester ke student hain.
 
 Instagram: https://www.instagram.com/capt_zaryab_malik`,
-    answerEn: `I was built by Zaryab Malik.
+    answerEn: `I was built by Zaryab Malik — he's a 2nd semester BS Computational Mathematics & AI (CMAI) student at LGU.
 
 Instagram: https://www.instagram.com/capt_zaryab_malik`,
     sources: [],
