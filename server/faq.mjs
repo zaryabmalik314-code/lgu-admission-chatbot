@@ -407,6 +407,51 @@ After the test, the merit list is published at ${FACTS.meritUrl}`,
     sources: [FACTS.testUrl],
   },
   {
+    id: 'cmai-scope',
+    any: [
+      /cmai.*(scope|career|job|future|salary|demand|placement)/,
+      /(scope|career|job|future|salary|demand|placement).*(cmai|computational math)/,
+      /computational math.*(scope|career|job|future)/,
+    ],
+    answer: `BS Computational Mathematics & AI (CMAI) HEC-recognized degree hai aur iska scope bohat acha hai:
+
+**Career paths:**
+- AI / Machine Learning Engineer
+- Data Scientist / Data Analyst
+- Quantitative Analyst (finance)
+- Research Scientist (academia / R&D)
+- Cryptography & Cyber Security Specialist
+- Software Engineer (AI-focused companies)
+
+**Kyun choose karein:**
+- Math + AI ka combination globally high-demand hai
+- Finance, healthcare, tech — har industry mein roles hain
+- MS/PhD ke liye strong foundation — applied math + AI dono cover hote hain
+- Pakistan mein AI industry grow ho rahi hai, early graduates ko advantage milega
+
+Apply: ${FACTS.applyUrl}
+Fee structure: ${FACTS.feeUrl}`,
+    answerEn: `BS Computational Mathematics & AI (CMAI) is an HEC-recognized degree with strong career prospects:
+
+**Career paths:**
+- AI / Machine Learning Engineer
+- Data Scientist / Data Analyst
+- Quantitative Analyst (finance)
+- Research Scientist (academia / R&D)
+- Cryptography & Cyber Security Specialist
+- Software Engineer (AI-focused companies)
+
+**Why choose CMAI:**
+- Math + AI combination is in high demand globally
+- Roles across finance, healthcare, tech, and more
+- Strong foundation for MS/PhD — covers applied math and AI
+- Pakistan's AI industry is growing — early graduates have an edge
+
+Apply: ${FACTS.applyUrl}
+Fee structure: ${FACTS.feeUrl}`,
+    sources: ['https://lgu.edu.pk/bs-mathematics-in-computational-mathematics-and-artificial-intelligence/', FACTS.applyUrl],
+  },
+  {
     // Generic "what do you offer" with no field/interest named — the case
     // where there's no personalization signal to weigh CMAI against, so
     // leading with it is a display choice, not advice overriding a better fit.
@@ -453,9 +498,11 @@ Full list here: ${FACTS.admissionsUrl}`,
     ],
     answer: `Mujhe Zaryab Malik ne banaya hai — woh khud LGU mein BS Computational Mathematics & AI (CMAI) ke 2nd semester ke student hain.
 
+Contact: 0317 1704869
 Instagram: https://www.instagram.com/capt_zaryab_malik`,
     answerEn: `I was built by Zaryab Malik — he's a 2nd semester BS Computational Mathematics & AI (CMAI) student at LGU.
 
+Contact: 0317 1704869
 Instagram: https://www.instagram.com/capt_zaryab_malik`,
     sources: [],
     skipRetrieval: true,
