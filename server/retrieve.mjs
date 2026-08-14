@@ -63,6 +63,12 @@ const SYNONYMS = {
   // Program shorthand students actually type. The site writes program codes
   // both glued ("BSCS") and spaced ("BS CS"), so each form has to reach both.
   cs: 'computer science bscs',
+  computers: 'computer science bscs bsit software',
+  computer: 'computer science bscs bsit',
+  computing: 'computer science bscs',
+  coding: 'programming computer science software engineering',
+  programming: 'programming computer science software engineering',
+  software: 'software engineering bsse',
   it: 'information technology bsit',
   se: 'software engineering bsse',
   ai: 'artificial intelligence bsai',

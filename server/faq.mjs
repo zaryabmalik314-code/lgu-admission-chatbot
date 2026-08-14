@@ -46,6 +46,14 @@ export function mentionsProgram(query) {
   return PROGRAM_PATTERN.test(query);
 }
 
+// Broader than PROGRAM_PATTERN: the everyday subject words a student uses to
+// describe an interest ("I like biology", "I'm into computers"), which don't
+// always match a formal program code.
+const FIELD_PATTERN =
+  /\b(bio(logy)?|computers?|computing|programming|coding|softwares?|business|commerce|finance|account(ing|s)?|management|math(s|ematics)?|physics|chemistry|psychology|english|urdu|media|journalism|communication|criminology|forensics?|economics|islamic|zoology|botany|nutrition|dietetics|artificial intelligence|data science|cyber ?security|electronics)\b/i;
+
+const MARKS_PATTERN = /\d+\s*(%|percent|marks?|number|cgpa|gpa|division)/i;
+
 /**
  * Each intent needs `any` (at least one must appear) and optionally `all`
  * (every one must appear), and may set `unless` to suppress itself. Patterns
@@ -122,6 +130,12 @@ Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`,
     // question is both safe and reliable — the table is fixed and verified, and
     // the framing makes clear which prior qualification each row applies to.
     id: 'eligibility-advising',
+    // Fires on eligibility/recommendation phrasing. But if the student names a
+    // subject and gives no marks ("I like biology, which program?"), that's an
+    // interest question — they want the programs in that field, not the generic
+    // criteria table — so it's suppressed and retrieval lists real programs.
+    // With marks present, eligibility is the priority and the table wins.
+    unless: (q) => FIELD_PATTERN.test(q) && !MARKS_PATTERN.test(q),
     any: [
       /which (degree|program|course|field)/,
       /what (degree|program|course).*(can|should) i/,
