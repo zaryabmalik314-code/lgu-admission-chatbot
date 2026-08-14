@@ -132,7 +132,7 @@ app.post('/api/chat', async (req, res) => {
   let streamedAny = false;
 
   try {
-    faq = matchFaq(question);
+    faq = matchFaq(question, history);
 
     // Tier 1 — a clean FAQ hit answers instantly, for free.
     if (faq && isNarrowEnoughForCannedAnswer(question, faq)) {

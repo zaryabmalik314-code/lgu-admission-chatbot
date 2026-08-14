@@ -52,7 +52,6 @@ export function mentionsProgram(query) {
 const FIELD_PATTERN =
   /\b(bio(logy)?|computers?|computing|programming|coding|softwares?|business|commerce|finance|account(ing|s)?|management|math(s|ematics)?|physics|chemistry|psychology|english|urdu|media|journalism|communication|criminology|forensics?|economics|islamic|zoology|botany|nutrition|dietetics|artificial intelligence|data science|cyber ?security|electronics)\b/i;
 
-const MARKS_PATTERN = /\d+\s*(%|percent|marks?|number|cgpa|gpa|division)/i;
 
 /**
  * Intermediate streams mapped to the LGU BS programs that fit them. This is a
@@ -137,11 +136,27 @@ function parseMarks(query) {
  * The advising answer. If the student named an intermediate stream, suggest the
  * programs that fit it — short, and actually a recommendation. Otherwise ask
  * which stream they did rather than dumping the whole criteria table.
+ *
+ * Reads recent history because advising is a two-turn conversation: a student
+ * says "I'm from ICS inter", then follows with just "i got 60". The stream from
+ * the earlier turn has to carry into the follow-up, or the second message maps
+ * 60% to the wrong row (the old bug: an ICS student told they qualify for PhD).
  */
-function buildAdvisingAnswer(query, lang) {
+function buildAdvisingAnswer(query, lang, history = []) {
   const en = lang === 'en';
-  const stream = STREAMS.find((s) => s.re.test(query));
-  const marks = parseMarks(query);
+
+  // The student's own recent turns, newest first — never the bot's, so we don't
+  // detect a stream from the bot having listed programs earlier.
+  const priorText = history
+    .filter((h) => h.role === 'user')
+    .slice(-4)
+    .map((h) => h.content)
+    .reverse()
+    .join(' \n ');
+
+  // Prefer what's in the current message; fall back to the conversation.
+  const stream = STREAMS.find((s) => s.re.test(query)) || STREAMS.find((s) => s.re.test(priorText));
+  const marks = parseMarks(query) ?? parseMarks(priorText);
 
   if (!stream) {
     return en
@@ -256,7 +271,7 @@ Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`,
     // interest question — they want the programs in that field, not the generic
     // criteria table — so it's suppressed and retrieval lists real programs.
     // With marks present, eligibility is the priority and the table wins.
-    unless: (q) => FIELD_PATTERN.test(q) && !MARKS_PATTERN.test(q),
+    unless: (q) => FIELD_PATTERN.test(q) && parseMarks(q) == null,
     any: [
       /which (degree|program|course|field)/,
       /what (degree|program|course).*(can|should) i/,
@@ -264,9 +279,14 @@ Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`,
       /recommend.*(degree|program|course)/,
       /(kaunsa|konsa|kon sa|kaun sa).*(program|degree|course|field|le)/,
       /(le sakta|le sakti|kar sakta|kar sakti|mil sakta|mil sakti).*(hoon|hun|hai)/,
-      /mere?\s*\d+\s*(%|percent|marks|number)/,
-      /\bmere marks\b/,
       /kis (degree|program|field) (mein|me)/,
+      // Bare marks statements — the common follow-up. "i got 60", "scored 55",
+      // "mere 60", "60%", "60 marks", or a message that's just "60". These
+      // inherit the stream from earlier turns via buildAdvisingAnswer.
+      /\b(got|scored|liye|liya|have|hain?)\s+\d{2,3}\b/i,
+      /\bmere?\s+\d{2,3}\b/i,
+      /\b\d{2,3}\s*(%|percent|fisad|marks?)\b/i,
+      /^\s*\d{2,3}\s*%?\s*[?.!]*\s*$/,
     ],
     // Answer depends on the stream/marks in the question, so it's generated
     // rather than static. See buildAdvisingAnswer.
@@ -403,10 +423,13 @@ What would you like to know?`,
 ];
 
 /**
+ * @param {string} query the current user message
+ * @param {Array<{role:string, content:string}>} [history] prior turns, so an
+ *   answer can use context from earlier in the open conversation
  * @returns {{id, answer, sources, lang}|null} a canned answer in the language
  *   the student wrote in, or null to fall through to the retrieval + LLM tier.
  */
-export function matchFaq(query) {
+export function matchFaq(query, history = []) {
   const q = query.toLowerCase().trim();
   const lang = detectLanguage(query);
 
@@ -419,7 +442,7 @@ export function matchFaq(query) {
     // Urdu script gets the Roman Urdu text rather than an English answer —
     // same language, just a different script, so it's much the closer match.
     const answer = intent.answerFn
-      ? intent.answerFn(query, lang)
+      ? intent.answerFn(query, lang, history)
       : lang === 'en'
         ? (intent.answerEn ?? intent.answer)
         : intent.answer;
