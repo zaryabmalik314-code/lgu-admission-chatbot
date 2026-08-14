@@ -28,6 +28,7 @@
 
   const SUGGESTIONS = [
     'BSCS ki fee kitni hai?',
+    'CMAI kya hai?',
     'Admission criteria kya hai?',
     'How do I apply?',
     'Scholarships available hain?',

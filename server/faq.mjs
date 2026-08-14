@@ -196,6 +196,74 @@ function buildAdvisingAnswer(query, lang, history = []) {
 }
 
 /**
+ * Degree-level overviews ("BS info", "MS info", "PhD info") — a different
+ * question from STREAMS (which programs fit *my* background) and from
+ * programs-list (the generic "what do you offer"). This is a level-scoped
+ * catalog, so it's templated the same way advising is: detect which level the
+ * student named, return that level's fixed, verified list.
+ */
+const LEVELS = [
+  {
+    re: /\bbs\b|\bundergrad(uate)?\b|\bbachelors?\b/i,
+    label: { en: 'BS (undergraduate)', ur: 'BS (undergraduate)' },
+    duration: { en: '4 years, 8 semesters', ur: '4 saal, 8 semesters' },
+    eligibility: { en: 'Intermediate (or equivalent) with 50%', ur: 'Intermediate (ya equivalent) 50% ke saath' },
+    // CMAI leads here for the same reason it leads programs-list and the
+    // "featured program" system-prompt rule: no personalization signal to
+    // weigh it against yet.
+    programs: [
+      'BS Computational Mathematics & AI (CMAI) — HEC-recognized',
+      'BSCS / BSSE / BSIT / BS Data Science / BS AI / BS Cyber Security',
+      'BBA / BS Accounting & Finance / BS Digital Business / BS Economics',
+      'BS Psychology / BS Clinical Psychology',
+      'BS Biotechnology / BS Human Nutrition & Dietetics / BS Genetics',
+      'BS Chemistry / BS Physics / BS Computational Physics & Data Science',
+      'BS Criminology (Digital Forensics, Crime Scene, Financial Crime)',
+      'BS English / BS Media & Communication / BS International Relations',
+    ],
+  },
+  {
+    re: /\bms\b|\bm\.?phil\b|\bmphil\b|\bmasters?\b|\bpostgraduate\b/i,
+    label: { en: 'MS / M.Phil', ur: 'MS / M.Phil' },
+    duration: { en: '2 years', ur: '2 saal' },
+    eligibility: { en: 'Relevant BS with 50% or 2.5 CGPA', ur: 'Relevant BS 50% ya 2.5 CGPA ke saath' },
+    programs: [
+      'MS Computer Science (MSCS, weekend option available)',
+      'MS Information Technology (MSIT)',
+      'MS Data Science (MSDS)',
+      'MS Artificial Intelligence (MSAI)',
+      'MBA (Business / Non-Business)',
+      'MS Clinical Psychology / MS Psychology / M.Phil Applied Psychology',
+      'M.Phil Mathematics / M.Phil English / M.Phil Mass Communication / M.Phil Islamic Studies / M.Phil International Relations',
+    ],
+  },
+  {
+    re: /\bph\.?d\b|\bdoctorate\b|\bdoctoral\b/i,
+    label: { en: 'PhD', ur: 'PhD' },
+    duration: { en: '3 years minimum (up to 7–8 years max)', ur: '3 saal minimum (max 7–8 saal tak)' },
+    eligibility: { en: 'MS/M.Phil with 70% or 3.0 CGPA', ur: 'MS/M.Phil 70% ya 3.0 CGPA ke saath' },
+    programs: [
+      'PhD Computer Science',
+      'PhD Mathematics',
+      'PhD Management Sciences',
+      'PhD Chemistry',
+      'PhD Urdu',
+    ],
+  },
+];
+
+function buildLevelInfoAnswer(query, lang) {
+  const en = lang === 'en';
+  const level = LEVELS.find((l) => l.re.test(query));
+  if (!level) return null;
+
+  const list = level.programs.map((p) => `- ${p}`).join('\n');
+  return en
+    ? `**${level.label.en} at LGU** — ${level.duration.en}. Eligibility: ${level.eligibility.en}.\n\n${list}\n\nFull list: ${FACTS.admissionsUrl}\nApply: ${FACTS.applyUrl}`
+    : `**${level.label.ur} LGU mein** — ${level.duration.ur}. Eligibility: ${level.eligibility.ur}.\n\n${list}\n\nPoori list: ${FACTS.admissionsUrl}\nApply: ${FACTS.applyUrl}`;
+}
+
+/**
  * Each intent needs `any` (at least one must appear) and optionally `all`
  * (every one must appear), and may set `unless` to suppress itself. Patterns
  * run against the lowercased query, so they cover Roman Urdu spellings
@@ -489,6 +557,61 @@ Fee structure: ${FACTS.feeUrl}`,
 Apply: ${FACTS.applyUrl}
 Fee structure: ${FACTS.feeUrl}`,
     sources: ['https://lgu.edu.pk/bs-mathematics-in-computational-mathematics-and-artificial-intelligence/', FACTS.applyUrl],
+  },
+  {
+    // General "what is CMAI" / "tell me about CMAI" — placed after cmai-scope
+    // and cmai-vs-bsai so those more specific intents get first refusal; this
+    // is the catch-all for a bare mention with no scope/comparison angle. Also
+    // what the widget's opening suggestion chip links to.
+    id: 'cmai-info',
+    any: [
+      /\bcmai\b[^.?!]{0,20}\b(kya hai|kya h|hai kya|info|information|details|matlab|kya cheez)\b/,
+      /\b(what is|tell me about|about)\b[^.?!]{0,10}\bcmai\b/,
+      /^\s*cmai\s*\??\s*$/,
+      /\bcmai\b[^.?!]{0,15}\b(ke bare|kay bare|k baray|k bare)\b/,
+    ],
+    answer: `**BS Computational Mathematics & Artificial Intelligence (CMAI)** LGU ke Department of Mathematics ka HEC-recognized degree hai — 4 saal, 8 semesters, 135 credit hours.
+
+Ye applied mathematics ko AI/machine learning ke saath combine karta hai, is liye strong theoretical + computational foundation milti hai (algorithms, modeling, statistics) jo AI systems banane aur samajhne dono mein kaam aati hai.
+
+Eligibility: Intermediate (ya equivalent) 50% ke saath — ICS, pre-engineering ya math background wale students ke liye best fit.
+
+Apply: ${FACTS.applyUrl}
+Fee structure: ${FACTS.feeUrl}`,
+    answerEn: `**BS Computational Mathematics & Artificial Intelligence (CMAI)** is an HEC-recognized degree from LGU's Department of Mathematics — 4 years, 8 semesters, 135 credit hours.
+
+It blends applied mathematics with AI/machine learning, giving a strong theoretical and computational foundation (algorithms, modeling, statistics) that carries into both building and understanding AI systems.
+
+Eligibility: Intermediate (or equivalent) with 50% — best fit for ICS, pre-engineering, or math-background students.
+
+Apply: ${FACTS.applyUrl}
+Fee structure: ${FACTS.feeUrl}`,
+    sources: [
+      'https://lgu.edu.pk/bs-mathematics-in-computational-mathematics-and-artificial-intelligence/',
+      'https://lgu.edu.pk/mathematics-programs/',
+    ],
+    skipRetrieval: true,
+  },
+  {
+    // "BS info" / "MS info" / "PhD info" — a level-scoped catalog. Distinct
+    // from programs-list (generic "what do you offer") and from STREAMS
+    // (advising by intermediate background): this answers "what does LGU
+    // have at the BS/MS/PhD level" directly, so it's served instantly rather
+    // than routed through retrieval.
+    id: 'degree-level-info',
+    any: [
+      /\bbs\b[^.?!]{0,20}\b(info|information|programs?|degrees?|details|options?|offer(ed)?|list)\b/,
+      /\b(undergrad(uate)?|bachelors?)\b[^.?!]{0,20}\b(info|information|programs?|degrees?|details|options?|offer(ed)?)\b/,
+      /\bms\b[^.?!]{0,20}\b(info|information|programs?|degrees?|details|options?|offer(ed)?|list)\b/,
+      /\b(m\.?phil|mphil|postgraduate|masters?)\b[^.?!]{0,20}\b(info|information|programs?|degrees?|details|options?|offer(ed)?)\b/,
+      /\b(ph\.?d|doctorate|doctoral)\b[^.?!]{0,20}\b(info|information|programs?|degrees?|details|options?|offer(ed)?|list)?\b/,
+      /^\s*(bs|ms|ph\.?d|mphil|m\.?phil)\s*(info|information)?\s*[?.!]*\s*$/,
+    ],
+    answerFn: (q, lang) => buildLevelInfoAnswer(q, lang) ?? (lang === 'en'
+      ? `Which level — BS, MS/M.Phil, or PhD? I'll list the programs LGU offers there.`
+      : `Kaunsa level — BS, MS/M.Phil, ya PhD? Main wahan LGU ke programs bata deta hoon.`),
+    sources: [FACTS.admissionsUrl],
+    skipRetrieval: true,
   },
   {
     // Generic "what do you offer" with no field/interest named — the case
