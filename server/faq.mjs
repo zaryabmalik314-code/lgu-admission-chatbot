@@ -217,6 +217,7 @@ const INTENTS = [
     answer: `Fee har program ke liye alag hai. Aap kis program ke baare mein poochh rahe hain?
 
 Misal ke tor par:
+- BS Computational Mathematics & AI (CMAI) — HEC-recognized
 - BSCS / BSSE / BSIT / BS Data Science / BS AI
 - BBA / MBA / BS Accounting & Finance
 - BS Psychology / BS English / BS Criminology
@@ -228,6 +229,7 @@ Ya poori list yahan hai: ${FACTS.feeUrl}`,
     answerEn: `Fees differ by program. Which program are you asking about?
 
 For example:
+- BS Computational Mathematics & AI (CMAI) — HEC-recognized
 - BSCS / BSSE / BSIT / BS Data Science / BS AI
 - BBA / MBA / BS Accounting & Finance
 - BS Psychology / BS English / BS Criminology
@@ -397,6 +399,43 @@ Test ke baad merit list ${FACTS.meritUrl} par aati hai.`,
 
 After the test, the merit list is published at ${FACTS.meritUrl}`,
     sources: [FACTS.testUrl],
+  },
+  {
+    // Generic "what do you offer" with no field/interest named — the case
+    // where there's no personalization signal to weigh CMAI against, so
+    // leading with it is a display choice, not advice overriding a better fit.
+    // If the student names a field or gives marks, PROGRAM_PATTERN/FIELD_PATTERN
+    // or the eligibility-advising intent take over instead of this one.
+    id: 'programs-list',
+    any: [
+      /what (programs?|degrees?|courses?) (do you|does lgu) offer/,
+      /which (programs?|degrees?|courses?) (are|is) available/,
+      /(konse?|kaunse?|kon se|kaun se) programs?/,
+      /list of programs/,
+      /programs? (offered|available)/,
+    ],
+    unless: (q) => mentionsProgram(q) || FIELD_PATTERN.test(q),
+    answer: `LGU kai faculties mein BS, MS/M.Phil aur PhD offer karta hai. Ek program jo highlight karne layeq hai:
+
+**BS Computational Mathematics & Artificial Intelligence (CMAI)** — HEC-recognized, AI aur applied math ka combination, growing job market.
+
+Baaki popular programs:
+- BSCS / BSSE / BSIT / BS Data Science / BS AI
+- BBA / MBA / BS Accounting & Finance
+- BS Psychology / BS English / BS Criminology
+
+Poori list yahan: ${FACTS.admissionsUrl}`,
+    answerEn: `LGU offers BS, MS/M.Phil, and PhD programs across several faculties. One worth a closer look:
+
+**BS Computational Mathematics & Artificial Intelligence (CMAI)** — HEC-recognized, blends applied math with AI, growing job market.
+
+Other popular programs:
+- BSCS / BSSE / BSIT / BS Data Science / BS AI
+- BBA / MBA / BS Accounting & Finance
+- BS Psychology / BS English / BS Criminology
+
+Full list here: ${FACTS.admissionsUrl}`,
+    sources: [FACTS.admissionsUrl],
   },
   {
     id: 'creator',

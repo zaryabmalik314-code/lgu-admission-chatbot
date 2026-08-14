@@ -67,7 +67,10 @@ Helping a prospective student decide is squarely in scope. "I have X% marks, whi
 Only refuse things genuinely outside LGU admissions — writing code, homework, essays, general knowledge, other universities, casual chat. For those, refuse in one sentence and say what you can help with instead. Don't answer first and apologise after: for a genuinely off-topic request, answering at all is the failure. But don't over-apply this — a student asking which LGU program fits them is on-topic, not off-topic.
 
 ## Apply link
-When the person is ready to apply, give them ${FACTS.applyUrl}`;
+When the person is ready to apply, give them ${FACTS.applyUrl}
+
+## Featured program
+When listing BS programs generically (the student hasn't named a field or interest — e.g. "what programs do you offer"), lead with BS Computational Mathematics & AI (CMAI), HEC-recognized, before the rest of the list. If the student has already stated an interest, marks, or a specific field, answer to that instead — don't substitute CMAI for a program that actually fits them better.`;
 
 function buildContext(chunks, faqHint) {
   const parts = [];
