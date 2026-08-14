@@ -59,106 +59,159 @@
     <style>
       :host, * { box-sizing: border-box; }
       .wrap {
-        position: fixed; bottom: 20px; right: 20px;
-        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-        font-size: 15px; line-height: 1.5;
+        position: fixed; bottom: 22px; right: 22px;
+        font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+        font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
       }
+
+      /* Launcher */
       .bubble {
-        width: 58px; height: 58px; border-radius: 50%; border: 0;
-        background: ${ACCENT}; color: #fff; cursor: pointer;
-        box-shadow: 0 6px 24px rgba(0,0,0,.28);
+        width: 60px; height: 60px; border-radius: 50%; border: 0;
+        background: ${ACCENT}; color: #fff; cursor: pointer; position: relative;
+        box-shadow: 0 10px 28px rgba(20,83,45,.4), 0 3px 8px rgba(0,0,0,.16);
         display: grid; place-items: center;
-        transition: transform .18s ease;
+        transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s;
       }
-      .bubble:hover { transform: scale(1.06); }
-      .bubble svg { width: 26px; height: 26px; }
+      .bubble:hover { transform: scale(1.08); box-shadow: 0 14px 34px rgba(20,83,45,.48); }
+      .bubble:active { transform: scale(.98); }
+      .bubble svg { width: 27px; height: 27px; position: relative; z-index: 1; }
+      .bubble::after {
+        content: ""; position: absolute; inset: 0; border-radius: 50%;
+        animation: ring 2.6s ease-out infinite;
+      }
+      @keyframes ring {
+        0% { box-shadow: 0 0 0 0 rgba(20,83,45,.34); }
+        70% { box-shadow: 0 0 0 15px rgba(20,83,45,0); }
+        100% { box-shadow: 0 0 0 0 rgba(20,83,45,0); }
+      }
 
+      /* Panel — animated open (fade + rise + scale from the launcher) */
       .panel {
-        position: absolute; bottom: 74px; right: 0;
-        width: min(94vw, 400px); height: min(76vh, 600px);
-        background: #fff; border-radius: 16px; overflow: hidden;
-        display: none; flex-direction: column;
-        box-shadow: 0 18px 48px rgba(0,0,0,.26);
-        border: 1px solid rgba(0,0,0,.08);
+        position: absolute; bottom: 80px; right: 0;
+        width: min(94vw, 402px); height: min(78vh, 620px);
+        background: #fff; border-radius: 20px; overflow: hidden;
+        display: flex; flex-direction: column;
+        box-shadow: 0 24px 60px rgba(0,0,0,.22), 0 6px 16px rgba(0,0,0,.1);
+        border: 1px solid rgba(0,0,0,.05);
+        opacity: 0; visibility: hidden; pointer-events: none;
+        transform: translateY(14px) scale(.97); transform-origin: bottom right;
+        transition: opacity .24s ease, transform .3s cubic-bezier(.34,1.4,.64,1), visibility .24s;
       }
-      .panel.open { display: flex; }
+      .panel.open { opacity: 1; visibility: visible; pointer-events: auto; transform: none; }
 
+      /* Header */
       header {
-        background: ${ACCENT}; color: #fff; padding: 14px 16px;
-        display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+        background: linear-gradient(135deg, ${ACCENT}, #0e3a1f);
+        color: #fff; padding: 15px 16px; display: flex; align-items: center; gap: 11px; flex-shrink: 0;
       }
-      header .t { font-weight: 600; font-size: 15px; }
-      header .s { font-size: 12px; opacity: .82; }
+      header .ava {
+        width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+        background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.2);
+        display: grid; place-items: center;
+      }
+      header .ava svg { width: 22px; height: 22px; color: ${GOLD}; }
+      header .meta { min-width: 0; }
+      header .t { font-weight: 650; font-size: 15.5px; letter-spacing: .1px; }
+      header .s { font-size: 12px; opacity: .88; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+      header .s .live {
+        width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
+        box-shadow: 0 0 6px rgba(74,222,128,.8);
+      }
       header .close {
         margin-left: auto; background: transparent; border: 0; color: #fff;
-        font-size: 22px; line-height: 1; cursor: pointer; opacity: .85; padding: 0 4px;
+        font-size: 25px; line-height: 1; cursor: pointer; opacity: .8; padding: 0 4px;
+        transition: opacity .15s, transform .15s;
       }
+      header .close:hover { opacity: 1; transform: rotate(90deg); }
 
       /* Per-message "read aloud" control, sits under a bot answer. */
       .read {
-        margin-top: 8px; display: inline-flex; align-items: center; gap: 5px;
+        margin-top: 9px; display: inline-flex; align-items: center; gap: 5px;
         background: transparent; border: 0; cursor: pointer; padding: 2px 0;
-        color: ${ACCENT}; font-size: 12.5px; opacity: .85;
+        color: ${ACCENT}; font-size: 12.5px; font-weight: 500; opacity: .82;
+        transition: opacity .15s;
       }
       .read:hover { opacity: 1; }
       .read.playing { color: #e53935; }
       .read svg { width: 15px; height: 15px; }
 
-      .log { flex: 1; overflow-y: auto; padding: 16px; background: #f7f8f7; }
-      .msg { margin-bottom: 12px; display: flex; }
+      /* Log */
+      .log { flex: 1; overflow-y: auto; padding: 18px 16px; background: #f4f6f4; }
+      .log::-webkit-scrollbar { width: 6px; }
+      .log::-webkit-scrollbar-thumb { background: rgba(0,0,0,.14); border-radius: 3px; }
+      .log::-webkit-scrollbar-track { background: transparent; }
+
+      /* Messages */
+      .msg { margin-bottom: 12px; display: flex; animation: rise .3s cubic-bezier(.2,.8,.3,1) both; }
       .msg.user { justify-content: flex-end; }
+      @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
       .b {
-        max-width: 84%; padding: 10px 13px; border-radius: 14px;
+        max-width: 85%; padding: 11px 14px; border-radius: 16px; font-size: 14.5px; line-height: 1.55;
         white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere;
       }
-      .msg.bot .b { background: #fff; border: 1px solid #e6e8e6; border-bottom-left-radius: 4px; }
-      .msg.user .b { background: ${ACCENT}; color: #fff; border-bottom-right-radius: 4px; }
+      .msg.bot .b {
+        background: #fff; color: #1f2b25; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+        border-bottom-left-radius: 5px;
+      }
+      .msg.user .b {
+        background: ${ACCENT}; color: #fff; border-bottom-right-radius: 5px;
+        box-shadow: 0 2px 7px rgba(20,83,45,.26);
+      }
 
       /* Answers arrive as markdown; these keep tables and links readable. */
-      .b table { border-collapse: collapse; margin: 8px 0; font-size: 13px; width: 100%; }
-      .b th, .b td { border: 1px solid #dfe3df; padding: 5px 8px; text-align: left; }
-      .b th { background: #eef2ef; font-weight: 600; }
-      .b a { color: ${ACCENT}; }
+      .b table { border-collapse: collapse; margin: 10px 0 4px; font-size: 13px; width: 100%; }
+      .b th, .b td { border: 1px solid #e4e9e5; padding: 6px 9px; text-align: left; }
+      .b th { background: #eef3ef; font-weight: 600; }
+      .b a { color: ${ACCENT}; font-weight: 500; text-decoration: none; border-bottom: 1px solid rgba(20,83,45,.3); }
+      .b a:hover { border-bottom-color: ${ACCENT}; }
       .b ul { margin: 6px 0; padding-left: 20px; }
-      .b code { background: #eef2ef; padding: 1px 4px; border-radius: 4px; font-size: 13px; }
+      .b li { margin: 3px 0; }
+      .b code { background: #eef3ef; padding: 1px 5px; border-radius: 5px; font-size: 13px; }
+      .b strong { font-weight: 650; }
 
-      .src { margin-top: 6px; font-size: 11.5px; color: #6b736b; }
-      .src a { color: #6b736b; }
+      .src { margin-top: 8px; font-size: 11.5px; color: #7a827a; }
+      .src a { color: #7a827a; }
 
-      .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+      .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
       .chip {
-        background: #fff; border: 1px solid #d8ded8; border-radius: 999px;
-        padding: 6px 11px; font-size: 13px; cursor: pointer; color: #23302a;
+        background: #fff; border: 1px solid #dbe2dc; border-radius: 999px;
+        padding: 7px 13px; font-size: 13px; cursor: pointer; color: ${ACCENT}; font-weight: 500;
+        box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: transform .15s, box-shadow .15s, border-color .15s, background .15s;
       }
-      .chip:hover { border-color: ${GOLD}; background: #fffdf5; }
+      .chip:hover {
+        border-color: ${GOLD}; background: #fffdf5;
+        transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.08);
+      }
 
       .dots span {
-        display: inline-block; width: 6px; height: 6px; margin-right: 3px;
-        border-radius: 50%; background: #9aa39a; animation: bl 1.2s infinite;
+        display: inline-block; width: 7px; height: 7px; margin-right: 4px;
+        border-radius: 50%; background: ${ACCENT}; opacity: .3; animation: bl 1.2s infinite;
       }
       .dots span:nth-child(2) { animation-delay: .2s; }
       .dots span:nth-child(3) { animation-delay: .4s; }
-      @keyframes bl { 0%,60%,100% { opacity: .3 } 30% { opacity: 1 } }
+      @keyframes bl { 0%,60%,100% { opacity: .25 } 30% { opacity: .9 } }
 
-      form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid #e6e8e6; background: #fff; flex-shrink: 0; }
+      /* Input */
+      form { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid #eaeeea; background: #fff; flex-shrink: 0; align-items: center; }
       input {
-        flex: 1; padding: 10px 13px; border: 1px solid #d8ded8; border-radius: 22px;
-        font: inherit; outline: none; min-width: 0;
+        flex: 1; padding: 11px 15px; border: 1.5px solid #dbe2dc; border-radius: 24px;
+        font: inherit; font-size: 14.5px; outline: none; min-width: 0; background: #f8faf8;
+        transition: border-color .15s, box-shadow .15s, background .15s;
       }
-      input:focus { border-color: ${GOLD}; }
-      /* Gold send button with dark-green icon — mirrors the site's "Apply Now". */
-      form button {
+      input:focus { border-color: ${GOLD}; box-shadow: 0 0 0 3px rgba(244,180,26,.18); background: #fff; }
+      .send {
         background: ${GOLD}; color: ${ACCENT}; border: 0; border-radius: 50%;
-        width: 40px; height: 40px; cursor: pointer; flex-shrink: 0;
-        display: grid; place-items: center;
+        width: 42px; height: 42px; cursor: pointer; flex-shrink: 0;
+        display: grid; place-items: center; box-shadow: 0 2px 8px rgba(244,180,26,.4);
+        transition: transform .15s, filter .15s;
       }
-      form button:hover { filter: brightness(1.05); }
-      form button:disabled { opacity: .45; cursor: default; }
+      .send:hover { filter: brightness(1.06); transform: scale(1.05); }
+      .send:disabled { opacity: .45; cursor: default; transform: none; box-shadow: none; }
       /* Mic — neutral until listening, then pulses red so it's obvious it's live. */
       .mic {
-        background: #eef2ef; color: #40514a; border: 0; border-radius: 50%;
-        width: 40px; height: 40px; cursor: pointer; flex-shrink: 0;
-        display: grid; place-items: center;
+        background: #eef3ef; color: #40514a; border: 0; border-radius: 50%;
+        width: 42px; height: 42px; cursor: pointer; flex-shrink: 0;
+        display: grid; place-items: center; transition: background .15s;
       }
       .mic:hover { background: #e2e9e3; }
       .mic.listening { background: #e53935; color: #fff; animation: pulse 1.3s infinite; }
@@ -173,7 +226,7 @@
          also tracked live via the visualViewport API in JS so the input always
          sits just above the keyboard. */
       @media (max-width: 600px) {
-        .wrap { bottom: 14px; right: 14px; }
+        .wrap { bottom: 16px; right: 16px; }
         .panel {
           position: fixed; top: 0; left: 0; right: 0; bottom: auto;
           width: 100%; height: 100vh; height: 100dvh; max-height: none;
@@ -181,14 +234,21 @@
         }
         .panel.open ~ .bubble { display: none; } /* full-screen covers it */
       }
+
+      @media (prefers-reduced-motion: reduce) {
+        .bubble::after, .msg, .panel { animation: none !important; transition: opacity .15s !important; }
+      }
     </style>
 
     <div class="wrap">
       <div class="panel" part="panel">
         <header>
-          <div>
+          <div class="ava">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+          </div>
+          <div class="meta">
             <div class="t">${TITLE}</div>
-            <div class="s">Fees · Criteria · Apply</div>
+            <div class="s"><span class="live"></span>Online · replies instantly</div>
           </div>
           <button class="close" aria-label="Close">&times;</button>
         </header>
@@ -198,7 +258,7 @@
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 15a3 3 0 003-3V6a3 3 0 00-6 0v6a3 3 0 003 3z"/><path d="M17 12a5 5 0 01-10 0H5a7 7 0 006 6.92V22h2v-3.08A7 7 0 0019 12h-2z"/></svg>
           </button>
           <input type="text" dir="auto" placeholder="Apna sawal likhein..." autocomplete="off" />
-          <button type="submit" aria-label="Send">
+          <button type="submit" class="send" aria-label="Send">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
           </button>
         </form>
@@ -214,7 +274,7 @@
   const log = $('.log');
   const form = $('form');
   const input = $('input');
-  const sendBtn = form.querySelector('button');
+  const sendBtn = form.querySelector('.send');
 
   const history = [];
   let busy = false;
