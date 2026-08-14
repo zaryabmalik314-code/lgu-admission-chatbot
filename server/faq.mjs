@@ -55,6 +55,127 @@ const FIELD_PATTERN =
 const MARKS_PATTERN = /\d+\s*(%|percent|marks?|number|cgpa|gpa|division)/i;
 
 /**
+ * Intermediate streams mapped to the LGU BS programs that fit them. This is a
+ * stable, factual mapping (an ICS student's natural options are the computing
+ * degrees), so templating it is both safe and far more useful than a generic
+ * criteria table — which is what a "suggest me a degree" question actually
+ * wants. Program names are proper nouns, identical in every language; only the
+ * surrounding sentence changes.
+ */
+const STREAMS = [
+  {
+    re: /\b(ics|i\.?c\.?s\.?|pre.?comp|comp(uter)?\s*science)\b/i,
+    label: 'ICS (computer science)',
+    programs: [
+      'BS Computer Science (BSCS)',
+      'BS Software Engineering (BSSE)',
+      'BS Information Technology (BSIT)',
+      'BS Data Science',
+      'BS Artificial Intelligence',
+      'BS Cyber Security',
+    ],
+    also: { en: 'BBA or BS Mathematics', ur: 'BBA ya BS Mathematics' },
+  },
+  {
+    re: /\b(pre.?med(ical)?|medical\s*group|bio(logy)?\s*(group|inter|student)?)\b/i,
+    label: 'pre-medical',
+    programs: [
+      'BS Biotechnology',
+      'BS Microbiology',
+      'BS Biochemistry',
+      'BS Zoology',
+      'BS Human Nutrition & Dietetics',
+      'BS Chemistry',
+      'BS Clinical Psychology',
+      'BS Criminology & Forensic Sciences',
+    ],
+    also: { en: 'BBA', ur: 'BBA' },
+  },
+  {
+    re: /\b(pre.?eng(ineer)?(ing)?|engineering\s*group)\b/i,
+    label: 'pre-engineering',
+    programs: [
+      'BS Physics',
+      'BS Computational Mathematics & AI',
+      'BS Computer Science',
+      'BS Software Engineering',
+      'BS Computational Physics & Data Science',
+    ],
+    also: { en: 'BS IT or BS Data Science', ur: 'BS IT ya BS Data Science' },
+  },
+  {
+    re: /\b(i\.?com|icom|d\.?com|commerce|tijarat)\b/i,
+    label: 'commerce',
+    programs: ['BBA', 'BS Accounting & Finance', 'BS Economics'],
+    also: null,
+  },
+  {
+    re: /\b(f\.?a\.?|arts|humanities)\b/i,
+    label: 'arts / humanities',
+    programs: [
+      'BS English',
+      'BS Urdu',
+      'BS Media & Communication',
+      'BS Clinical Psychology',
+      'BS Criminology',
+      'BS International Relations',
+      'BS Islamic Studies',
+    ],
+    also: null,
+  },
+];
+
+/** First plausible marks figure in the query (30–100), else null. */
+function parseMarks(query) {
+  const nums = [...query.matchAll(/(\d{1,3})\s*(%|percent|marks?|fisad)?/gi)]
+    .map((m) => parseInt(m[1], 10))
+    .filter((n) => n >= 30 && n <= 100);
+  return nums.length ? nums[0] : null;
+}
+
+/**
+ * The advising answer. If the student named an intermediate stream, suggest the
+ * programs that fit it — short, and actually a recommendation. Otherwise ask
+ * which stream they did rather than dumping the whole criteria table.
+ */
+function buildAdvisingAnswer(query, lang) {
+  const en = lang === 'en';
+  const stream = STREAMS.find((s) => s.re.test(query));
+  const marks = parseMarks(query);
+
+  if (!stream) {
+    return en
+      ? `Which Intermediate stream did you do — ICS, pre-medical, pre-engineering, commerce, or arts? Tell me that and I'll suggest the programs that fit. After Intermediate you're eligible for any BS program at 50%. Apply: ${FACTS.applyUrl}`
+      : `Aap ne Intermediate mein kaunsa group kiya — ICS, pre-medical, pre-engineering, commerce, ya arts? Yeh bata dein, main aap ke liye munasib programs suggest kar deta hoon. Intermediate ke baad 50% par aap kisi bhi BS program ke liye eligible hain. Apply: ${FACTS.applyUrl}`;
+  }
+
+  let marksLine = '';
+  if (marks != null) {
+    if (marks >= 50) {
+      marksLine = en
+        ? `With ${marks}% you're comfortably above the 50% minimum. `
+        : `${marks}% ke saath aap 50% minimum se aaraam se upar hain. `;
+    } else {
+      marksLine = en
+        ? `Note: BS programs need 50%, so at ${marks}% confirm eligibility with the office, or consider an ADP (2-year). `
+        : `Note: BS ke liye 50% chahiye, is liye ${marks}% par office se confirm karein, ya ADP (2-saal) consider karein. `;
+    }
+  }
+
+  const list = stream.programs.map((p) => `- ${p}`).join('\n');
+  const also = stream.also ? (en ? stream.also.en : stream.also.ur) : null;
+  const article = /^[aeiou]/i.test(stream.label) ? 'an' : 'a';
+
+  return en
+    ? `${marksLine}With ${article} ${stream.label} background, these LGU programs fit best:\n\n${list}\n\n${
+        also ? `You'd also qualify for ${also}. ` : ''
+      }Each has its own admission test. Apply: ${FACTS.applyUrl}`
+    : `${marksLine}${stream.label} background ke saath, aap ke liye ye LGU programs sab se munasib hain:\n\n${list}\n\n${
+        also ? `Aap ${also} ke liye bhi eligible hain. ` : ''
+      }Har ek ka apna admission test hota hai. Apply: ${FACTS.applyUrl}`;
+}
+
+/**
  * Each intent needs `any` (at least one must appear) and optionally `all`
  * (every one must appear), and may set `unless` to suppress itself. Patterns
  * run against the lowercased query, so they cover Roman Urdu spellings
@@ -147,30 +268,9 @@ Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`,
       /\bmere marks\b/,
       /kis (degree|program|field) (mein|me)/,
     ],
-    answer: `Ye aap ki aakhri mukammal ki gayi degree par depend karta hai. Minimum criteria yeh hai:
-
-| Kis level par aap apply kar rahe hain | Aap ke paas kya hona chahiye | Minimum |
-|---|---|---|
-| BS (4 saal) | Intermediate / FSc / A-Level | 50% |
-| Master / ADP | Intermediate | 50% |
-| MS / M.Phil | 16-saal / Bachelor degree | 50% ya 2.5 CGPA |
-| PhD | MS / M.Phil degree | 70% ya 3.0 CGPA |
-
-Zaroori baat: 70% wali shart sirf PhD ke liye hai, aur woh aap ki **Masters** degree par hai — Intermediate par nahi. Intermediate ke baad aap BS ya Master programs ke liye eligible hain (50% par).
-
-Har department ka apna admission test bhi hota hai. Aap ka exact percentage aur degree bata dein to main behtar guide kar sakta hoon, ya Admission Office se confirm karein: ${FACTS.admissionOffice}`,
-    answerEn: `It depends on your last completed degree. The minimum criteria are:
-
-| Level you're applying to | What you need to have | Minimum |
-|---|---|---|
-| BS (4 years) | Intermediate / FSc / A-Level | 50% |
-| Master / ADP | Intermediate | 50% |
-| MS / M.Phil | 16-year / Bachelor degree | 50% or 2.5 CGPA |
-| PhD | MS / M.Phil degree | 70% or 3.0 CGPA |
-
-Important: the 70% requirement is only for PhD, and it's on your **Master's** degree — not on Intermediate. After Intermediate you're eligible for BS or Master programs (at 50%).
-
-Each department also holds its own admission test. Tell me your exact percentage and degree and I can guide you better, or confirm with the Admission Office: ${FACTS.admissionOffice}`,
+    // Answer depends on the stream/marks in the question, so it's generated
+    // rather than static. See buildAdvisingAnswer.
+    answerFn: buildAdvisingAnswer,
     sources: [FACTS.criteriaUrl],
     skipRetrieval: true,
   },
@@ -318,7 +418,11 @@ export function matchFaq(query) {
 
     // Urdu script gets the Roman Urdu text rather than an English answer —
     // same language, just a different script, so it's much the closer match.
-    const answer = lang === 'en' ? (intent.answerEn ?? intent.answer) : intent.answer;
+    const answer = intent.answerFn
+      ? intent.answerFn(query, lang)
+      : lang === 'en'
+        ? (intent.answerEn ?? intent.answer)
+        : intent.answer;
 
     return { id: intent.id, answer, lang, sources: intent.sources, skipRetrieval: intent.skipRetrieval };
   }
