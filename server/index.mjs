@@ -20,6 +20,26 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = process.env.PORT || 3000;
 const RETRIEVE_K = Number(process.env.RETRIEVE_K) || 6;
 
+/**
+ * The answer to give when the LLM can't run — no key, or the provider is out of
+ * quota. Falls back to the best FAQ text, then to links for the pages retrieval
+ * found, then to the office. Never a dead end: even with the token budget
+ * exhausted, a student still gets pointed at the right page.
+ */
+function fallbackAnswer(faq, cited) {
+  if (faq) return faq.answer;
+  if (cited.length) {
+    return (
+      'Is ka jawab in pages par hai:\n\n' +
+      cited
+        .slice(0, 3)
+        .map((c) => `- [${c.title}](${c.url})`)
+        .join('\n')
+    );
+  }
+  return `Is ka jawab mere paas nahi hai. Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`;
+}
+
 const app = express();
 app.use(express.json({ limit: '64kb' }));
 
@@ -106,8 +126,13 @@ app.post('/api/chat', async (req, res) => {
     closed = true;
   });
 
+  // Hoisted so the catch can fall back to them if the LLM call fails.
+  let faq = null;
+  let cited = [];
+  let streamedAny = false;
+
   try {
-    const faq = matchFaq(question);
+    faq = matchFaq(question);
 
     // Tier 1 — a clean FAQ hit answers instantly, for free.
     if (faq && isNarrowEnoughForCannedAnswer(question, faq)) {
@@ -124,21 +149,13 @@ app.post('/api/chat', async (req, res) => {
     const chunks = await search(question, RETRIEVE_K);
     // Header chunks ride along as context but weren't matched by the query, so
     // they don't belong in the citation list shown to the student.
-    const cited = chunks.filter((c) => !c.isHeader);
+    cited = chunks.filter((c) => !c.isHeader);
 
     if (!isConfigured()) {
       // Without a key the bot still works, just narrower: hand back the best
       // FAQ match or point at the pages retrieval found.
-      const text = faq
-        ? faq.answer
-        : cited.length
-          ? `Is ka jawab in pages par hai:\n\n${cited
-              .slice(0, 3)
-              .map((c) => `- [${c.title}](${c.url})`)
-              .join('\n')}`
-          : `Is ka jawab mere paas nahi hai. Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`;
       stream.send('meta', { tier: 'faq-fallback' });
-      stream.send('delta', { text });
+      stream.send('delta', { text: fallbackAnswer(faq, cited) });
       stream.send('done', { sources: cited.slice(0, 3).map((c) => c.url) });
       return stream.end();
     }
@@ -151,7 +168,10 @@ app.post('/api/chat', async (req, res) => {
       chunks,
       faqHint: faq?.answer,
       onDelta: (text) => {
-        if (!closed) stream.send('delta', { text });
+        if (!closed) {
+          streamedAny = true;
+          stream.send('delta', { text });
+        }
       },
     });
 
@@ -160,12 +180,21 @@ app.post('/api/chat', async (req, res) => {
     });
     stream.end();
   } catch (err) {
-    console.error('chat error:', err);
-    // The stream headers are already sent, so the error has to travel as an
-    // event rather than an HTTP status.
-    stream.send('error', {
-      message: `Maazrat, abhi jawab nahi de saka. Admission Office: ${FACTS.admissionOffice}`,
-    });
+    const rateLimited = err?.status === 429;
+    console.error(rateLimited ? 'chat error: LLM rate limited' : 'chat error:', err);
+
+    // If nothing streamed yet (the usual case — rate limits and provider errors
+    // hit on the first call), degrade to the same answer the no-key path gives:
+    // the FAQ text or links to the pages retrieval found. A quota outage should
+    // still point students somewhere useful, not dead-end them.
+    if (!streamedAny && !closed) {
+      stream.send('delta', { text: fallbackAnswer(faq, cited) });
+      stream.send('done', { sources: cited.slice(0, 3).map((c) => c.url) });
+    } else {
+      stream.send('error', {
+        message: `Maazrat, abhi jawab mukammal nahi ho saka. Admission Office: ${FACTS.admissionOffice}`,
+      });
+    }
     stream.end();
   }
 });

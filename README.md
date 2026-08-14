@@ -55,8 +55,26 @@ gets back ~350 output tokens — so cost is dominated by input.
 | `claude-haiku-4-5` | ~0.43¢ | ~$32 |
 | `claude-sonnet-5` | ~1.3¢ | ~$96 |
 
-Groq also has a free tier that covers low volume outright. Treat the figures as
-estimates and confirm against each provider's current pricing page.
+### The Groq free tier is a daily token cap, not a request count
+
+The free tier is **100,000 tokens/day** for `llama-3.3-70b-versatile`. Each
+LLM-tier question sends ~2,500 tokens of context, so that's only **~40
+LLM-answered questions per day** before it's exhausted for ~an hour.
+
+Two things soften this:
+
+- **FAQ-tier questions cost zero tokens** — criteria, how-to-apply, contact,
+  scholarships, merit, and the marks-advising table are all canned. Only
+  program-specific and interest questions hit the LLM.
+- **When the cap is reached the bot degrades gracefully** — instead of a
+  dead-end it returns links to the pages retrieval found, so students are still
+  pointed to the right place.
+
+For a live admission bot during intake season, the free tier won't be enough.
+Upgrade to the Groq Dev tier (pay-per-token, still cheap — see the cost table)
+at <https://console.groq.com/settings/billing>, or switch to the Anthropic
+provider. Treat the cost figures as estimates and confirm against the provider's
+current pricing.
 
 ### Watch Roman Urdu quality
 
