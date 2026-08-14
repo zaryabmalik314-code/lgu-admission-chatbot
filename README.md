@@ -167,8 +167,9 @@ Built in, browser-native, no cost or keys:
   fill the box and send. Set `data-voice-lang="en-US"` for an English-speaking
   audience (default `ur-PK` transcribes spoken Urdu to Urdu script, which the
   bot answers in kind).
-- **Voice output** — the speaker toggle in the header reads answers aloud
-  (off by default; markdown is stripped so tables aren't read as punctuation).
+- **Voice output** — a "Sunein" (Listen) button under each bot answer reads
+  that message aloud; tap again to stop. Markdown is stripped so tables aren't
+  read as punctuation, and an Urdu voice is used for Urdu-script answers.
 
 Uses the Web Speech API. Full support on Chrome/Edge and Android Chrome; the mic
 button hides itself on browsers without speech recognition (mainly Firefox).

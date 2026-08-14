@@ -90,15 +90,19 @@
       header .t { font-weight: 600; font-size: 15px; }
       header .s { font-size: 12px; opacity: .82; }
       header .close {
-        background: transparent; border: 0; color: #fff;
+        margin-left: auto; background: transparent; border: 0; color: #fff;
         font-size: 22px; line-height: 1; cursor: pointer; opacity: .85; padding: 0 4px;
       }
-      header .tts {
-        margin-left: auto; background: transparent; border: 0; color: #fff;
-        cursor: pointer; opacity: .6; padding: 4px 6px; display: grid; place-items: center;
+
+      /* Per-message "read aloud" control, sits under a bot answer. */
+      .read {
+        margin-top: 8px; display: inline-flex; align-items: center; gap: 5px;
+        background: transparent; border: 0; cursor: pointer; padding: 2px 0;
+        color: ${ACCENT}; font-size: 12.5px; opacity: .85;
       }
-      header .tts:hover { opacity: .85; }
-      header .tts.on { opacity: 1; color: ${GOLD}; }
+      .read:hover { opacity: 1; }
+      .read.playing { color: #e53935; }
+      .read svg { width: 15px; height: 15px; }
 
       .log { flex: 1; overflow-y: auto; padding: 16px; background: #f7f8f7; }
       .msg { margin-bottom: 12px; display: flex; }
@@ -177,9 +181,6 @@
             <div class="t">${TITLE}</div>
             <div class="s">Fees · Criteria · Apply</div>
           </div>
-          <button class="tts" aria-label="Read answers aloud" title="Read answers aloud">
-            <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4z"/></svg>
-          </button>
           <button class="close" aria-label="Close">&times;</button>
         </header>
         <div class="log"></div>
@@ -385,7 +386,7 @@
       }
 
       history.push({ role: 'user', content: question }, { role: 'assistant', content: answer });
-      speak(answer);
+      attachReadAloud(bubble, answer);
     } catch (err) {
       bubble.innerHTML = md(
         'Server se rabta nahi ho saka. Admission Office: 042-37181823'
@@ -473,23 +474,14 @@
   }
 
   /* ---------------------------- Voice output -------------------------- */
-  // Off by default — auto-playing audio is intrusive. The header speaker
-  // toggles it; when on, each answer is read aloud.
-  const ttsBtn = $('.tts');
-  let ttsOn = false;
+  // A "read aloud" button under each bot answer — tap to hear that message,
+  // tap again to stop. Browser-native, no cost. On browsers without speech
+  // synthesis, attachReadAloud is a no-op so no button appears.
   const canSpeak = 'speechSynthesis' in window;
-  if (!canSpeak) {
-    ttsBtn.style.display = 'none';
-  } else {
-    ttsBtn.addEventListener('click', () => {
-      ttsOn = !ttsOn;
-      ttsBtn.classList.toggle('on', ttsOn);
-      if (!ttsOn) speechSynthesis.cancel();
-    });
-  }
+  const SPEAKER_SVG =
+    '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4z"/></svg>';
 
-  function speak(text) {
-    if (!ttsOn || !canSpeak || !text) return;
+  function speakText(text, btn) {
     // Strip markdown so tables and links don't get read as punctuation soup.
     const clean = text
       .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [label](url) -> label
@@ -501,6 +493,8 @@
     if (!clean) return;
 
     speechSynthesis.cancel();
+    root.querySelectorAll('.read.playing').forEach((b) => b.classList.remove('playing'));
+
     const u = new SpeechSynthesisUtterance(clean);
     // Urdu script -> an Urdu voice if the device has one; otherwise default.
     const lang = /[؀-ۿ]/.test(text) ? 'ur-PK' : 'en-US';
@@ -510,6 +504,27 @@
       voices.find((v) => v.lang === lang) ||
       voices.find((v) => v.lang.startsWith(lang.slice(0, 2))) ||
       null;
+
+    btn.classList.add('playing');
+    u.onend = () => btn.classList.remove('playing');
+    u.onerror = () => btn.classList.remove('playing');
     speechSynthesis.speak(u);
+  }
+
+  function attachReadAloud(bubble, text) {
+    if (!canSpeak || !text) return;
+    const btn = document.createElement('button');
+    btn.className = 'read';
+    btn.type = 'button';
+    btn.innerHTML = `${SPEAKER_SVG}<span>Sunein</span>`;
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('playing')) {
+        speechSynthesis.cancel();
+        btn.classList.remove('playing');
+      } else {
+        speakText(text, btn);
+      }
+    });
+    bubble.appendChild(btn);
   }
 })();
