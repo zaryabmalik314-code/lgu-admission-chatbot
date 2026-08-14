@@ -106,10 +106,10 @@
       }
       header .ava {
         width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-        background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.2);
-        display: grid; place-items: center;
+        background: #fff; border: 1px solid rgba(255,255,255,.4);
+        display: grid; place-items: center; overflow: hidden;
       }
-      header .ava svg { width: 22px; height: 22px; color: ${GOLD}; }
+      header .ava img { width: 100%; height: 100%; object-fit: cover; }
       header .meta { min-width: 0; }
       header .t { font-weight: 650; font-size: 15.5px; letter-spacing: .1px; }
       header .s { font-size: 12px; opacity: .88; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
@@ -244,7 +244,7 @@
       <div class="panel" part="panel">
         <header>
           <div class="ava">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+            <img src="https://lgu.edu.pk/wp-content/uploads/2022/05/cropped-lgu_logo-Site-Identity-192x192.png" alt="LGU" />
           </div>
           <div class="meta">
             <div class="t">${TITLE}</div>

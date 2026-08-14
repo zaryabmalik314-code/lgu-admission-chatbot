@@ -440,7 +440,7 @@ Full list here: ${FACTS.admissionsUrl}`,
   {
     id: 'creator',
     any: [
-      /who (made|makes|build|builds|built|create|creates|created|develop|develops|developed|design|designs|designed) (you|this|this bot|this chatbot)/,
+      /who (made|make|makes|built|build|builds|created|create|creates|developed|develop|develops|designed|design|designs) (you|this|this bot|this chatbot)/,
       /who is your (creator|developer|maker)/,
       /(tumhe|tumhein|aapko|apko) kis ne (banaya|develop kiya)/,
       /ye bot kis ne banaya/,
