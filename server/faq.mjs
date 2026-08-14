@@ -399,6 +399,36 @@ After the test, the merit list is published at ${FACTS.meritUrl}`,
     sources: [FACTS.testUrl],
   },
   {
+    id: 'creator',
+    any: [
+      /who (made|built|created|developed|designed) (you|this|this bot|this chatbot)/,
+      /who is your (creator|developer|maker)/,
+      /(tumhe|tumhein|aapko|apko) kis ne (banaya|develop kiya)/,
+      /ye bot kis ne banaya/,
+    ],
+    answer: `Mujhe Zaryab Malik ne banaya hai.
+
+Instagram: https://www.instagram.com/capt_zaryab_malik`,
+    answerEn: `I was built by Zaryab Malik.
+
+Instagram: https://www.instagram.com/capt_zaryab_malik`,
+    sources: [],
+    skipRetrieval: true,
+  },
+  {
+    id: 'owner',
+    any: [
+      /who owns (you|this|this bot|this chatbot)/,
+      /who runs (you|this|this bot|this chatbot)/,
+      /are you (official|affiliated)/,
+      /(ye bot|ye chatbot) kis ka hai/,
+    ],
+    answer: `Main Lahore Garrison University (LGU) ke admissions ka official assistant hoon. Mujhe Zaryab Malik ne LGU ke liye develop kiya hai.`,
+    answerEn: `I'm the official LGU (Lahore Garrison University) admissions assistant. I was developed for LGU by Zaryab Malik.`,
+    sources: [],
+    skipRetrieval: true,
+  },
+  {
     id: 'greeting',
     any: [/^\s*(hi|hello|hey|salam|assalam|aoa|as-salam|slam)\b/, /^\s*(kya haal|kaise ho)/],
     answer: `Assalam-o-Alaikum! Main LGU Admissions ka assistant hoon.
