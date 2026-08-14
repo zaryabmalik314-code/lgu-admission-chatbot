@@ -5,15 +5,19 @@
  * has to come from the supplied context, because the site is the only source of
  * truth for fees and deadlines and it changes every intake.
  *
- * Three providers sit behind one interface, chosen with LLM_PROVIDER:
+ * Three providers sit behind one interface. LLM_PROVIDER picks the primary:
  *   groq       (default) cheap and fast
- *   gemini     the most generous free tier by far — ~1,500 requests/day free,
- *              no card — so it can run the whole bot for free most of the year
+ *   gemini     generous free tier, cheap paid tier
  *   anthropic  the quality benchmark
  * The thing most likely to differ between them is Roman Urdu quality — most
  * students type "fees kitni hai", not "what is the fee" — so being able to A/B
  * them on real questions with one env var is worth far more than the few lines
  * each implementation costs.
+ *
+ * answerStream() also fails over to whichever other providers have a key set,
+ * in case the primary hits a billing cap or quota error mid-traffic — a
+ * capped-out API key should degrade to a slower/different model, not a dead
+ * widget in front of real admission traffic.
  */
 import { FACTS, detectLanguage } from './faq.mjs';
 
@@ -27,8 +31,17 @@ const EFFORT = process.env.CLAUDE_EFFORT || 'low';
 const KEY_ENV = { groq: 'GROQ_API_KEY', gemini: 'GEMINI_API_KEY', anthropic: 'ANTHROPIC_API_KEY' };
 const MODEL_OF = { groq: GROQ_MODEL, gemini: GEMINI_MODEL, anthropic: CLAUDE_MODEL };
 
+// Providers with a key set, in the order to try them: the configured primary
+// first, then whichever others have credentials. If the primary hits a
+// billing cap or quota error mid-launch, the student gets an answer from a
+// working provider instead of a dead widget.
+function configuredProviders() {
+  const others = Object.keys(KEY_ENV).filter((p) => p !== PROVIDER);
+  return [PROVIDER, ...others].filter((p) => process.env[KEY_ENV[p]]);
+}
+
 export function isConfigured() {
-  return Boolean(process.env[KEY_ENV[PROVIDER] || 'GROQ_API_KEY']);
+  return configuredProviders().length > 0;
 }
 
 export function describeProvider() {
@@ -233,10 +246,30 @@ async function streamAnthropic({ question, history, context, onDelta }) {
  * @param {(text:string)=>void} args.onDelta
  * @returns {Promise<string>} the full answer
  */
+const STREAM_FN = { groq: streamGroq, gemini: streamGemini, anthropic: streamAnthropic };
+
 export async function answerStream({ question, history = [], chunks, faqHint, onDelta }) {
   const context = buildContext(chunks, faqHint);
-  const args = { question, history, context, onDelta };
-  if (PROVIDER === 'anthropic') return streamAnthropic(args);
-  if (PROVIDER === 'gemini') return streamGemini(args);
-  return streamGroq(args);
+
+  for (const provider of configuredProviders()) {
+    // Only fall through to the next provider if nothing was streamed yet —
+    // once a partial answer has reached the student, retrying would either
+    // duplicate it or restart mid-sentence, both worse than stopping.
+    let started = false;
+    try {
+      return await STREAM_FN[provider]({
+        question,
+        history,
+        context,
+        onDelta: (delta) => { started = true; onDelta(delta); },
+      });
+    } catch (err) {
+      if (started) throw err;
+      console.error(`[llm] ${provider} failed, trying next provider:`, err?.message || err);
+    }
+  }
+
+  const fallback = `Filhal thoda technical load hai. Seedha Admission Office se rabta karein: ${FACTS.admissionOffice} · ${FACTS.email}`;
+  onDelta(fallback);
+  return fallback;
 }
