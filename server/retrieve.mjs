@@ -76,6 +76,15 @@ const SYNONYMS = {
   bba: 'bba business administration management',
   mba: 'mba business administration management',
   psychology: 'psychology',
+  // Degree levels the site spells out in full. "MPhil Mathematics" would never
+  // reach the "Masters of Philosophy in Mathematics" page otherwise, because
+  // the page never contains the token "mphil".
+  mphil: 'mphil masters philosophy',
+  'm.phil': 'mphil masters philosophy',
+  phd: 'phd doctor philosophy doctoral',
+  ms: 'ms masters',
+  adp: 'adp associate degree',
+  bs: 'bs bachelor',
 };
 
 const STOPWORDS = new Set(

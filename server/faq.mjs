@@ -115,8 +115,57 @@ Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`,
     sources: [FACTS.applyUrl, FACTS.admissionsUrl],
   },
   {
+    // "I have X% marks, which program can I get?" — the core advising question.
+    // It was getting refused as off-topic, or answered wrong: the model read
+    // the criteria table and told a student with 70% intermediate marks they
+    // could do a PhD, because 70% is the PhD row. A canned answer keyed on the
+    // question is both safe and reliable — the table is fixed and verified, and
+    // the framing makes clear which prior qualification each row applies to.
+    id: 'eligibility-advising',
+    any: [
+      /which (degree|program|course|field)/,
+      /what (degree|program|course).*(can|should) i/,
+      /suggest.*(degree|program|course|field)/,
+      /recommend.*(degree|program|course)/,
+      /(kaunsa|konsa|kon sa|kaun sa).*(program|degree|course|field|le)/,
+      /(le sakta|le sakti|kar sakta|kar sakti|mil sakta|mil sakti).*(hoon|hun|hai)/,
+      /mere?\s*\d+\s*(%|percent|marks|number)/,
+      /\bmere marks\b/,
+      /kis (degree|program|field) (mein|me)/,
+    ],
+    answer: `Ye aap ki aakhri mukammal ki gayi degree par depend karta hai. Minimum criteria yeh hai:
+
+| Kis level par aap apply kar rahe hain | Aap ke paas kya hona chahiye | Minimum |
+|---|---|---|
+| BS (4 saal) | Intermediate / FSc / A-Level | 50% |
+| Master / ADP | Intermediate | 50% |
+| MS / M.Phil | 16-saal / Bachelor degree | 50% ya 2.5 CGPA |
+| PhD | MS / M.Phil degree | 70% ya 3.0 CGPA |
+
+Zaroori baat: 70% wali shart sirf PhD ke liye hai, aur woh aap ki **Masters** degree par hai — Intermediate par nahi. Intermediate ke baad aap BS ya Master programs ke liye eligible hain (50% par).
+
+Har department ka apna admission test bhi hota hai. Aap ka exact percentage aur degree bata dein to main behtar guide kar sakta hoon, ya Admission Office se confirm karein: ${FACTS.admissionOffice}`,
+    answerEn: `It depends on your last completed degree. The minimum criteria are:
+
+| Level you're applying to | What you need to have | Minimum |
+|---|---|---|
+| BS (4 years) | Intermediate / FSc / A-Level | 50% |
+| Master / ADP | Intermediate | 50% |
+| MS / M.Phil | 16-year / Bachelor degree | 50% or 2.5 CGPA |
+| PhD | MS / M.Phil degree | 70% or 3.0 CGPA |
+
+Important: the 70% requirement is only for PhD, and it's on your **Master's** degree — not on Intermediate. After Intermediate you're eligible for BS or Master programs (at 50%).
+
+Each department also holds its own admission test. Tell me your exact percentage and degree and I can guide you better, or confirm with the Admission Office: ${FACTS.admissionOffice}`,
+    sources: [FACTS.criteriaUrl],
+    skipRetrieval: true,
+  },
+  {
     id: 'criteria',
     any: [/criteria/, /eligib/, /kitne (marks|number)/, /minimum (marks|percentage)/, /shart|sharait/, /requirement/],
+    // A program name means they want that program's specific criteria — let
+    // retrieval handle it rather than the generic table.
+    unless: mentionsProgram,
     answer: `LGU ka minimum admission criteria (aakhri hasil ki gayi degree ke hisaab se):
 
 | Program | Minimum |
