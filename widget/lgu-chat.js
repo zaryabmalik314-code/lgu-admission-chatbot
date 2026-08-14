@@ -168,9 +168,18 @@
         100% { box-shadow: 0 0 0 0 rgba(229,57,53,0); }
       }
 
-      @media (max-width: 480px) {
+      /* On phones the floating box breaks when the keyboard opens (vh units
+         don't shrink for the keyboard), so go full-screen instead. Height is
+         also tracked live via the visualViewport API in JS so the input always
+         sits just above the keyboard. */
+      @media (max-width: 600px) {
         .wrap { bottom: 14px; right: 14px; }
-        .panel { width: calc(100vw - 28px); height: 74vh; }
+        .panel {
+          position: fixed; top: 0; left: 0; right: 0; bottom: auto;
+          width: 100%; height: 100vh; height: 100dvh; max-height: none;
+          border-radius: 0; border: 0;
+        }
+        .panel.open ~ .bubble { display: none; } /* full-screen covers it */
       }
     </style>
 
@@ -407,16 +416,41 @@
     ask(q);
   });
 
-  $('.bubble').addEventListener('click', () => {
+  // Keep the full-screen mobile panel sized to the *visible* viewport, which
+  // shrinks when the on-screen keyboard opens — so the input never hides behind
+  // it and the header never scrolls off. No-op on desktop / when closed.
+  const vv = window.visualViewport;
+  function fitViewport() {
+    const mobile = matchMedia('(max-width: 600px)').matches;
+    if (vv && mobile && panel.classList.contains('open')) {
+      panel.style.height = vv.height + 'px';
+      panel.style.top = vv.offsetTop + 'px';
+    } else {
+      panel.style.height = '';
+      panel.style.top = '';
+    }
+  }
+  if (vv) {
+    vv.addEventListener('resize', fitViewport);
+    vv.addEventListener('scroll', fitViewport);
+  }
+
+  function openPanel() {
     panel.classList.add('open');
     if (!log.children.length) greet();
+    fitViewport();
     input.focus();
-  });
+  }
+  function closePanel() {
+    panel.classList.remove('open');
+    fitViewport();
+  }
 
-  $('.close').addEventListener('click', () => panel.classList.remove('open'));
+  $('.bubble').addEventListener('click', openPanel);
+  $('.close').addEventListener('click', closePanel);
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') panel.classList.remove('open');
+    if (e.key === 'Escape') closePanel();
   });
 
   /* ---------------------------- Voice input --------------------------- */
