@@ -618,6 +618,20 @@ Apply: ${FACTS.applyUrl}`,
     ],
   },
   {
+    id: 'cmai-hec',
+    any: [/cmai.*(hec|recogni|accredit|valid|manya)/, /(hec|recogni|accredit).*(cmai|computational math)/],
+    answer: `Haan, BS Computational Mathematics & AI (CMAI) HEC-recognized degree hai. Ye LGU ke Department of Mathematics ke under aata hai — 4 saal ka program hai, 135 credit hours, aur NCEAC se bhi recognized hai.
+
+Apply: ${FACTS.applyUrl}
+Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
+    answerEn: `Yes, BS Computational Mathematics & AI (CMAI) is fully HEC-recognized. It's a 4-year program under LGU's Department of Mathematics — 135 credit hours, and also NCEAC recognized.
+
+Apply: ${FACTS.applyUrl}
+Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
+    sources: [FACTS.applyUrl],
+    skipRetrieval: true,
+  },
+  {
     id: 'cmai-scope',
     any: [
       /cmai.*(scope|career|job|future|salary|demand|placement)/,
