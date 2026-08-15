@@ -287,6 +287,36 @@ function buildLevelInfoAnswer(query, lang) {
  */
 const INTENTS = [
   {
+    // Checked before the vague fee-catchall below: "fee structure" contains
+    // the word "fee" too, so without this ordering the broader fee-vague
+    // intent would win and this comparison table would never fire.
+    id: 'fee-structure',
+    any: [/fee\s*structure/, /fees?\s*(table|list|comparison|compare)/, /total\s*(fee|charges|cost)/, /per\s*credit\s*hour/, /semester\s*fee/, /admission\s*fee/],
+    unless: mentionsProgram,
+    answerFn: (query, lang) => {
+      const table = `| Program | Admission Fee | Per Credit Hour | 1st Sem (Est.) | Total (Est.) |
+| --- | --- | --- | --- | --- |
+| BSCS / BSSE / BSIT / BSDS / BSAI / BS CySec | 17,500 | 7,744 | 163,252 | 1,086,848 |
+| CMAI / BS Chem / Math / Stats / Physics | 17,500 | 6,403 | 140,614 | 921,836 |
+| BBA | 17,500 | 7,392 | 155,916 | 1,032,384 |
+| BS Psych / BS Clinical Psych | 17,500 | 7,392 | 158,416 | 1,052,384 |
+| BS A&F / Mass Com / IR / Econ | 17,500 | 6,695 | 143,370 | 940,380 |
+| BS Bio / Biotech / Micro / Zoology / Nutrition | 17,500 | 6,695 | 145,870 | 960,380 |
+| BS English / BS Urdu | 17,500 | 5,160 | 110,580 | 737,760 |
+| MS/MPhil CS / IT / DS | 20,000 | 11,816 | 165,392 | 387,580 |
+| PhD CS | 50,000 | 15,246 | 195,814 | 816,408 |`;
+      const note = lang === 'en'
+        ? `\n\nAll amounts are in PKR (FY 2026-27). Fees may change — confirm with Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}\n\nFull details: ${FACTS.feeUrl}`
+        : `\n\nSaari fees PKR mein hain (FY 2026-27). Fees change ho sakti hain — confirm karein Admission Office se: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}\n\nPoori list: ${FACTS.feeUrl}`;
+      const intro = lang === 'en'
+        ? 'Here\'s the fee structure for top programs at LGU:\n\n'
+        : 'LGU ke popular programs ki fee structure:\n\n';
+      return intro + table + note;
+    },
+    sources: [FACTS.feeUrl],
+    skipRetrieval: true,
+  },
+  {
     // "fees kitni hai?" with no program named. Every faculty has a different
     // fee table, so there is no single right answer — left to the model it
     // picks numbers from whichever tables retrieval happened to return, which
@@ -319,33 +349,6 @@ For example:
 Tell me the program and I'll give you its full fee structure.
 
 Or see the full list here: ${FACTS.feeUrl}`,
-    sources: [FACTS.feeUrl],
-    skipRetrieval: true,
-  },
-  {
-    id: 'fee-structure',
-    any: [/fee\s*structure/, /fees?\s*(table|list|comparison|compare)/, /total\s*(fee|charges|cost)/, /per\s*credit\s*hour/, /semester\s*fee/, /admission\s*fee/],
-    unless: mentionsProgram,
-    answerFn: (query, lang) => {
-      const table = `| Program | Admission Fee | Per Credit Hour | 1st Sem (Est.) | Total (Est.) |
-| --- | --- | --- | --- | --- |
-| BSCS / BSSE / BSIT / BSDS / BSAI / BS CySec | 17,500 | 7,744 | 163,252 | 1,086,848 |
-| CMAI / BS Chem / Math / Stats / Physics | 17,500 | 6,403 | 140,614 | 921,836 |
-| BBA | 17,500 | 7,392 | 155,916 | 1,032,384 |
-| BS Psych / BS Clinical Psych | 17,500 | 7,392 | 158,416 | 1,052,384 |
-| BS A&F / Mass Com / IR / Econ | 17,500 | 6,695 | 143,370 | 940,380 |
-| BS Bio / Biotech / Micro / Zoology / Nutrition | 17,500 | 6,695 | 145,870 | 960,380 |
-| BS English / BS Urdu | 17,500 | 5,160 | 110,580 | 737,760 |
-| MS/MPhil CS / IT / DS | 20,000 | 11,816 | 165,392 | 387,580 |
-| PhD CS | 50,000 | 15,246 | 195,814 | 816,408 |`;
-      const note = lang === 'en'
-        ? `\n\nAll amounts are in PKR (FY 2026-27). Fees may change — confirm with Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}\n\nFull details: ${FACTS.feeUrl}`
-        : `\n\nSaari fees PKR mein hain (FY 2026-27). Fees change ho sakti hain — confirm karein Admission Office se: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}\n\nPoori list: ${FACTS.feeUrl}`;
-      const intro = lang === 'en'
-        ? 'Here\'s the fee structure for top programs at LGU:\n\n'
-        : 'LGU ke popular programs ki fee structure:\n\n';
-      return intro + table + note;
-    },
     sources: [FACTS.feeUrl],
     skipRetrieval: true,
   },

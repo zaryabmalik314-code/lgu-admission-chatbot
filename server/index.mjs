@@ -16,7 +16,7 @@ import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS, mentionsProgram, PROGRA
 import { checkRateLimit, rateLimitStats } from './ratelimit.mjs';
 import { answerStream, isConfigured, describeProvider, ALL_PROVIDERS_FAILED_FALLBACK } from './llm.mjs';
 import { getCached, setCached, cacheStats } from './cache.mjs';
-import { trackQuestion, analyticsStats } from './analytics.mjs';
+import { trackQuestion, trackFeedback, analyticsStats } from './analytics.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = process.env.PORT || 3000;
@@ -84,6 +84,21 @@ app.get('/api/health', async (req, res) => {
 
 app.get('/api/analytics', (req, res) => {
   res.json(analyticsStats());
+});
+
+app.post('/api/feedback', (req, res) => {
+  const rating = req.body?.rating;
+  const question = String(req.body?.question || '').slice(0, 500);
+  const answer = String(req.body?.answer || '').slice(0, 2000);
+  const tier = req.body?.tier ? String(req.body.tier).slice(0, 30) : undefined;
+  const intentId = req.body?.intentId ? String(req.body.intentId).slice(0, 60) : undefined;
+
+  if ((rating !== 'up' && rating !== 'down') || !question) {
+    return res.status(400).json({ error: 'rating (up|down) and question are required' });
+  }
+
+  trackFeedback(question, answer, tier, intentId, rating);
+  res.json({ ok: true });
 });
 
 function sse(res) {
@@ -196,7 +211,7 @@ app.post('/api/chat', async (req, res) => {
 
     const tier = faq ? 'hybrid' : 'rag';
     trackQuestion(question, tier, faq?.id);
-    stream.send('meta', { tier, sources: cited.map((c) => c.url) });
+    stream.send('meta', { tier, intent: faq?.id, sources: cited.map((c) => c.url) });
 
     const fullAnswer = await answerStream({
       question,

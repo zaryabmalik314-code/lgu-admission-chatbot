@@ -176,6 +176,25 @@
       .read.playing { color: #e53935; opacity: 1; }
       .read svg { width: 14px; height: 14px; }
 
+      /* ── Per-message feedback (thumbs) ── */
+      .fb { margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; }
+      .fb-btn {
+        background: transparent; border: 0; cursor: pointer; padding: 3px;
+        color: #a3aca4; border-radius: 6px; display: grid; place-items: center;
+        opacity: .6; transition: opacity .2s, color .2s, background .2s, transform .15s;
+      }
+      .fb-btn svg { width: 13px; height: 13px; }
+      .fb-btn:hover:not(:disabled) { opacity: 1; background: #eef3ef; color: ${ACCENT}; }
+      .fb-btn:active:not(:disabled) { transform: scale(.88); }
+      .fb-btn:disabled { cursor: default; }
+      .fb.voted .fb-btn:not(.picked) { opacity: .25; }
+      .fb-btn.picked { opacity: 1; color: ${ACCENT}; background: #eef3ef; }
+      .fb-btn.fb-down.picked { color: #e53935; background: #fdeceb; }
+      .wrap.dark .fb-btn { color: #6a7580; }
+      .wrap.dark .fb-btn:hover:not(:disabled) { background: #2a3040; color: #8ac4a0; }
+      .wrap.dark .fb-btn.picked { color: #8ac4a0; background: #2a3040; }
+      .wrap.dark .fb-btn.fb-down.picked { color: #f47069; background: #3a2426; }
+
       /* ── Chat log ── */
       .log {
         flex: 1; overflow-y: auto; padding: 20px 16px;
@@ -569,6 +588,7 @@
       const decoder = new TextDecoder();
       let buf = '';
       let currentTier = '';
+      let currentIntent = '';
       const pendingDeltas = [];
 
       while (true) {
@@ -593,6 +613,7 @@
 
           if (evLine[1] === 'meta') {
             currentTier = payload.tier;
+            currentIntent = payload.intent || '';
           } else if (evLine[1] === 'delta') {
             if (currentTier === 'faq' || currentTier === 'cache') {
               pendingDeltas.push(payload.text);
@@ -635,6 +656,7 @@
 
       history.push({ role: 'user', content: question }, { role: 'assistant', content: answer });
       attachReadAloud(bubble, answer);
+      attachFeedback(bubble, question, answer, currentTier, currentIntent);
     } catch (err) {
       bubble.innerHTML = md(
         'Server se rabta nahi ho saka. Admission Office: 042-37181823 / 0322-2757543'
@@ -793,5 +815,41 @@
       }
     });
     bubble.appendChild(btn);
+  }
+
+  function attachFeedback(bubble, question, answer, tier, intentId) {
+    const wrap = document.createElement('div');
+    wrap.className = 'fb';
+
+    const vote = (rating, btn, otherBtn) => {
+      if (wrap.classList.contains('voted')) return;
+      wrap.classList.add('voted');
+      btn.classList.add('picked');
+      otherBtn.disabled = true;
+      fetch(`${API}/api/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, answer, tier, intentId, rating }),
+      }).catch(() => {});
+    };
+
+    const up = document.createElement('button');
+    up.type = 'button';
+    up.className = 'fb-btn';
+    up.setAttribute('aria-label', 'Helpful answer');
+    up.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 21h2a1 1 0 001-1v-9a1 1 0 00-1-1H2v11zM22.71 10.29l-3.79-3.79a1 1 0 01-.29-.7V3a2 2 0 00-2-2h-.28a1 1 0 00-.95.68L13 8H8a2 2 0 00-2 2v9a2 2 0 002 2h9.28a2 2 0 001.94-1.51l1.66-6.5a2 2 0 00-.17-1.7z"/></svg>';
+
+    const down = document.createElement('button');
+    down.type = 'button';
+    down.className = 'fb-btn fb-down';
+    down.setAttribute('aria-label', 'Unhelpful answer');
+    down.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 3h-2a1 1 0 00-1 1v9a1 1 0 001 1h2V3zM1.29 13.71l3.79 3.79c.18.18.29.43.29.7V21a2 2 0 002 2h.28a1 1 0 00.95-.68L11 16h5a2 2 0 002-2V5a2 2 0 00-2-2H6.72a2 2 0 00-1.94 1.51l-1.66 6.5a2 2 0 00.17 1.7z"/></svg>';
+
+    up.addEventListener('click', () => vote('up', up, down));
+    down.addEventListener('click', () => vote('down', down, up));
+
+    wrap.appendChild(up);
+    wrap.appendChild(down);
+    bubble.appendChild(wrap);
   }
 })();

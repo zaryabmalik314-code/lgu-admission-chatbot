@@ -13,7 +13,16 @@ const counters = {
   topQuestions: new Map(),
 };
 
+const feedback = {
+  up: 0,
+  down: 0,
+  // Recent downvotes only — that's the actionable list (what to go fix),
+  // not a full log. Upvotes don't need remembering individually.
+  recentDown: [],
+};
+
 const TOP_Q_LIMIT = 50;
+const RECENT_DOWN_LIMIT = 30;
 
 function normalize(q) {
   return q.toLowerCase().trim().replace(/\s+/g, ' ').replace(/[?.!]+$/, '');
@@ -41,6 +50,24 @@ export function trackQuestion(question, tier, intentId) {
   }
 }
 
+export function trackFeedback(question, answer, tier, intentId, rating) {
+  if (rating !== 'up' && rating !== 'down') return;
+  feedback[rating]++;
+
+  if (rating === 'down') {
+    feedback.recentDown.unshift({
+      question: normalize(question),
+      answer: String(answer || '').slice(0, 300),
+      tier,
+      intentId,
+      at: new Date().toISOString(),
+    });
+    if (feedback.recentDown.length > RECENT_DOWN_LIMIT) {
+      feedback.recentDown.length = RECENT_DOWN_LIMIT;
+    }
+  }
+}
+
 export function analyticsStats() {
   const topQuestions = [...counters.topQuestions.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -57,5 +84,10 @@ export function analyticsStats() {
     tiers: { ...counters.tierHits },
     topIntents,
     topQuestions,
+    feedback: {
+      up: feedback.up,
+      down: feedback.down,
+      recentDown: feedback.recentDown,
+    },
   };
 }
