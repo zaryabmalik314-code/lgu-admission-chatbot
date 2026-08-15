@@ -376,7 +376,11 @@ Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`,
       /^\s*(ics|i\.?c\.?s\.?|fsc|f\.?s\.?c\.?|pre.?med(ical)?|pre.?eng(ineer)?(ing)?|i\.?com|icom|d\.?com|f\.?a\.?)\s*[?.!]*\s*$/i,
       /\b(got|scored|liye|liya|have|hain?)\s+\d{2,3}\b/i,
       /\bmere?\s+\d{2,3}\b/i,
-      /\b\d{2,3}\s*(%|percent|fisad|marks?)\b/i,
+      // \b can never follow a literal "%" (it's not a word character, so the
+      // boundary check fails against the space or end-of-string after it) —
+      // the old `(%|percent|fisad|marks?)\b` form silently never matched a
+      // bare "85%". Boundary now sits only after the word-based alternatives.
+      /\b\d{2,3}\s*(%|percent\b|fisad\b|marks?\b)/i,
       /^\s*\d{2,3}\s*%?\s*[?.!]*\s*$/,
     ],
     // Answer depends on the stream/marks in the question, so it's generated
@@ -783,6 +787,30 @@ What would you like to know?`,
 export function matchFaq(query, history = []) {
   const q = query.toLowerCase().trim();
   const lang = detectLanguage(query);
+
+  // A bare marks/stream follow-up ("mere 85% hain", "ics") inherits whatever
+  // the conversation was actually about — it doesn't repeat "scholarship",
+  // so without this it falls through with no scholarship-specific match at
+  // all. Seen in testing: that fell to the LLM tier ungrounded, which quoted
+  // one specific program's page (a marks-based tuition-exemption table that
+  // exists only on the BS Economics roadmap) as if it were LGU's general
+  // scholarship policy. Checked before the main loop so it wins over
+  // eligibility-advising, which would otherwise answer with a program list
+  // instead of addressing the scholarship the student actually asked about.
+  const isMarksOrStreamOnly =
+    !SCHOLARSHIP_PATTERN.test(q) && !mentionsProgram(q) && (parseMarks(q) != null || STREAMS.some((s) => s.re.test(q)));
+  if (isMarksOrStreamOnly) {
+    const priorUserText = history
+      .filter((h) => h.role === 'user')
+      .slice(-3)
+      .map((h) => h.content)
+      .join(' ');
+    if (SCHOLARSHIP_PATTERN.test(priorUserText)) {
+      const scholarshipIntent = INTENTS.find((i) => i.id === 'scholarship');
+      const answer = scholarshipIntent.answerFn(query, lang, history);
+      return { id: scholarshipIntent.id, answer, lang, sources: scholarshipIntent.sources, skipRetrieval: true };
+    }
+  }
 
   for (const intent of INTENTS) {
     const anyHit = intent.any.some((re) => re.test(q));
