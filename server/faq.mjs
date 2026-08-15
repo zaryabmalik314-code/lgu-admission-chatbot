@@ -565,7 +565,14 @@ Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
   },
   {
     id: 'entry-test-dates',
-    any: [/entry test|admission test|entrance test|test.*date|test.*kab|imtihan.*kab/, /test.*schedule/],
+    any: [
+      /ent(e)?ry\s*test/, // "entery test" is a common typo
+      /admission test|entrance test/,
+      /test.*date|test.*kab|imtihan.*kab/,
+      /test.*schedule/,
+      /\bnext\b.*\btest\b|\btest\b.*\bnext\b/,
+      /\bwhen\b.*\btest\b/,
+    ],
     unless: (q) => /pattern|syllabus|guide|prepare|tayyar/i.test(q),
     answer: `**Fa-2026 Entry Test Schedule:**
 
@@ -659,7 +666,7 @@ Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
   },
   {
     id: 'hostel-transport',
-    any: [/hostel|accommodation|rehaaish|rihaaish/, /transport|bus|van|conveyance/, /bahar se|out of city|doosre shehar/],
+    any: [/hostel|accommodation|rehaaish|rihaaish/, /transport|\bbus\b|\bvan\b|conveyance/, /bahar se|out of city|doosre shehar/],
     answer: `LGU ki website par filhal hostel ya transport ki specific details available nahi hain. In cheezon ke liye seedha Admission Office se poochein — woh aapko updated availability bata sakte hain:
 
 - Phone: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}
