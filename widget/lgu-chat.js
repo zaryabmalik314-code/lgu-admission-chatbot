@@ -28,20 +28,22 @@
       listening: 'Listening...',
       greeting: "Hi! I'm LGU's admissions assistant.\n\nAsk me about programs, fees, criteria, scholarships, or how to apply.",
       suggestions: ['Fee structure', 'What is CMAI?', 'Admission criteria', 'How to apply?', 'Available scholarships', 'Is CMAI HEC recognized?'],
+      toggle: 'اردو',
     },
     ur: {
-      placeholder: 'Apna sawal likhein...',
-      powered: 'Powered by LGU AI',
-      listen: 'Sunein',
-      listening: 'Sun raha hoon…',
-      greeting: 'Assalam-o-Alaikum! Main LGU Admissions ka assistant hoon.\n\nFees, criteria, scholarships ya apply karne ke baare mein kuch bhi poochein.',
-      suggestions: ['Fee structure', 'CMAI kya hai?', 'Is CMAI recognized by HEC?', 'Admission criteria kya hai?', 'Apply kaise karein?', 'Scholarships available hain?'],
+      placeholder: 'اپنا سوال لکھیں...',
+      powered: 'LGU AI کی جانب سے',
+      listen: 'سنیں',
+      listening: 'سن رہا ہوں...',
+      greeting: 'السلام علیکم! میں LGU Admissions کا اسسٹنٹ ہوں۔\n\nفیس، داخلے کی شرائط، اسکالرشپ یا اپلائی کرنے کے بارے میں کچھ بھی پوچھیں۔',
+      suggestions: ['فیس سٹرکچر', 'CMAI کیا ہے؟', 'داخلے کی شرائط', 'اپلائی کیسے کریں؟', 'دستیاب اسکالرشپس', 'کیا CMAI HEC سے منظور شدہ ہے؟'],
+      toggle: 'EN',
     },
   };
 
   const LK = 'lgu-chat-lang';
   let lang;
-  try { lang = localStorage.getItem(LK) || 'ur'; } catch { lang = 'ur'; }
+  try { lang = localStorage.getItem(LK) || 'en'; } catch { lang = 'en'; }
   const L = () => LANGS[lang];
 
   const SESSION_KEY = 'lgu-chat-session';
@@ -449,7 +451,7 @@
             <div class="t">${TITLE}</div>
             <div class="s"><span class="live"></span>Online</div>
           </div>
-          <button class="lang-toggle" aria-label="Switch language">${lang === 'ur' ? 'EN' : 'UR'}</button>
+          <button class="lang-toggle" aria-label="Switch language">${LANGS[lang].toggle}</button>
           <button class="dm-toggle" aria-label="Toggle dark mode">
             <svg class="ico-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
             <svg class="ico-sun" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0-5a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm0 18a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm9-9a1 1 0 0 1 0 2h-1a1 1 0 1 1 0-2h1zM4 11a1 1 0 0 1 0 2H3a1 1 0 1 1 0-2h1zm14.36-5.95a1 1 0 0 1 0 1.41l-.7.71a1 1 0 0 1-1.42-1.42l.71-.7a1 1 0 0 1 1.41 0zM7.05 17.66a1 1 0 0 1 0 1.41l-.7.71a1 1 0 1 1-1.42-1.42l.71-.7a1 1 0 0 1 1.41 0zm11.9 0a1 1 0 0 1-1.41 0l-.71-.7a1 1 0 0 1 1.42-1.42l.7.71a1 1 0 0 1 0 1.41zM7.05 6.34a1 1 0 0 1-1.41 0l-.71-.7a1 1 0 0 1 1.42-1.42l.7.71a1 1 0 0 1 0 1.41z"/></svg>
@@ -502,12 +504,12 @@
     lang = l;
     try { localStorage.setItem(LK, l); } catch {}
     const labels = L();
-    langBtn.textContent = l === 'ur' ? 'EN' : 'UR';
+    langBtn.textContent = labels.toggle;
     input.placeholder = labels.placeholder;
     root.querySelector('.powered').textContent = labels.powered;
   }
   langBtn.addEventListener('click', () => {
-    applyLang(lang === 'ur' ? 'en' : 'ur');
+    applyLang(lang === 'en' ? 'ur' : 'en');
   });
 
   const history = [];
