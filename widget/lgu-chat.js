@@ -459,12 +459,13 @@
       attachReadAloud(bubble, answer);
     } catch (err) {
       bubble.innerHTML = md(
-        'Server se rabta nahi ho saka. Admission Office: 042-37181823'
+        'Server se rabta nahi ho saka. Admission Office: 042-37181823 / 0322-2757543'
       );
     } finally {
       busy = false;
       sendBtn.disabled = false;
       input.focus();
+      showSuggestions();
       log.scrollTop = log.scrollHeight;
     }
   }
