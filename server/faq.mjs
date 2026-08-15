@@ -43,7 +43,7 @@ export function detectLanguage(text) {
 // specific ones the site uses (cmai, dfcs, wcci, bch) that don't start with a
 // generic "bs"/"ms" prefix, so "cmai ki fee" is recognised as program-specific
 // rather than falling into the "which program?" vague-fee reply.
-const PROGRAM_PATTERN =
+export const PROGRAM_PATTERN =
   /\b(bscs|bsse|bsit|bsds|bsai|bba|mba|bsaf|cmai|dfcs|wcci|bch|mscs|msit|msds|msai|mscp|adp|post.?adp|m\.?phil|mphil|ph\.?d|phd|ms|bs)\b|\b(computer science|software engineering|information technology|data science|artificial intelligence|computational math(ematics)?|cyber ?security|digital forensic|psychology|english|urdu|chemistry|physics|math(ematics)?|zoology|botany|microbiology|biotech(nology)?|biochemistry|nutrition|criminology|forensic|economics|islamic|business administration|accounting|mass ?com|media|international relations)\b/i;
 
 export function mentionsProgram(query) {

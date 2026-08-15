@@ -56,6 +56,7 @@ const SYNONYMS = {
   programme: 'program degree',
   degree: 'program degree',
   semester: 'semester',
+  roadmap: 'road map',
   timing: 'timing schedule',
   campus: 'campus address location',
   hostel: 'hostel accommodation',

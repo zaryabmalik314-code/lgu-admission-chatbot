@@ -12,7 +12,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { search, loadIndex } from './retrieve.mjs';
-import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS } from './faq.mjs';
+import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS, mentionsProgram, PROGRAM_PATTERN } from './faq.mjs';
 import { checkRateLimit, rateLimitStats } from './ratelimit.mjs';
 import { answerStream, isConfigured, describeProvider } from './llm.mjs';
 
@@ -146,7 +146,17 @@ app.post('/api/chat', async (req, res) => {
     // Retrieved context is the bulk of the input tokens, so this is the main
     // cost dial after the model choice. Below ~5 the combined fee-structure
     // page starts dropping out of range on program-specific fee questions.
-    const chunks = await search(question, RETRIEVE_K);
+    //
+    // When the question uses pronouns ("this program", "iska roadmap"),
+    // BM25 has no program-specific tokens to match. Pull program names
+    // from the last few turns so retrieval finds the right page.
+    let retrievalQuery = question;
+    if (!mentionsProgram(question) && history.length) {
+      const recent = history.slice(-4).map((m) => m.content).join(' ');
+      const programs = recent.match(new RegExp(PROGRAM_PATTERN.source, 'gi'));
+      if (programs) retrievalQuery = question + ' ' + [...new Set(programs)].join(' ');
+    }
+    const chunks = await search(retrievalQuery, RETRIEVE_K);
     // Header chunks ride along as context but weren't matched by the query, so
     // they don't belong in the citation list shown to the student.
     cited = chunks.filter((c) => !c.isHeader);
