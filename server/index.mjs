@@ -195,7 +195,8 @@ app.post('/api/chat', async (req, res) => {
       const programs = recent.match(new RegExp(PROGRAM_PATTERN.source, 'gi'));
       if (programs) retrievalQuery = question + ' ' + [...new Set(programs)].join(' ');
     }
-    const chunks = await search(retrievalQuery, RETRIEVE_K);
+    const k = faq ? 4 : RETRIEVE_K;
+    const chunks = await search(retrievalQuery, k);
     // Header chunks ride along as context but weren't matched by the query, so
     // they don't belong in the citation list shown to the student.
     cited = chunks.filter((c) => !c.isHeader);
@@ -219,6 +220,7 @@ app.post('/api/chat', async (req, res) => {
       chunks,
       faqHint: faq?.answer,
       prefer: faq ? 'groq' : 'gemini',
+      maxTokens: faq ? 400 : 1200,
       onDelta: (text) => {
         if (!closed) {
           streamedAny = true;

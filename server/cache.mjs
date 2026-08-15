@@ -24,8 +24,37 @@ const store = new Map(); // insertion order doubles as LRU order
 let hits = 0;
 let misses = 0;
 
+const STOP_WORDS = new Set([
+  'kya', 'hai', 'hain', 'ho', 'hoti', 'hota', 'mujhe', 'muje', 'ye', 'yeh',
+  'wo', 'woh', 'ka', 'ki', 'ke', 'ko', 'se', 'me', 'mein', 'main', 'bhi',
+  'aur', 'ek', 'to', 'toh', 'na', 'nahi', 'nhi', 'ya', 'per', 'par', 'ap',
+  'aap', 'kitni', 'kitna', 'kitne', 'kaise', 'kab', 'kahan', 'konsa', 'konsi',
+  'batao', 'bataye', 'bataen', 'bataiye', 'chahiye', 'chahte',
+  'sir', 'madam', 'bhai', 'yaar', 'ji',
+  'the', 'is', 'a', 'an', 'what', 'how', 'can', 'do', 'does', 'did',
+  'will', 'would', 'could', 'should', 'i', 'my', 'me', 'we', 'our',
+  'about', 'for', 'of', 'in', 'on', 'at', 'to', 'and', 'or', 'but',
+  'tell', 'please', 'pls', 'plz', 'hello', 'hi', 'hey', 'thanks', 'thank',
+  'want', 'need', 'know', 'get', 'are', 'was', 'were', 'be', 'been',
+  'have', 'has', 'had', 'this', 'that', 'it', 'its',
+]);
+
+const PLURAL_MAP = {
+  fees: 'fee', programs: 'program', scholarships: 'scholarship',
+  courses: 'course', documents: 'document', tests: 'test',
+  deadlines: 'deadline', semesters: 'semester', marks: 'mark',
+};
+
 function normalize(question) {
-  return question.toLowerCase().trim().replace(/\s+/g, ' ').replace(/[?.!]+$/, '');
+  const words = question
+    .toLowerCase()
+    .trim()
+    .replace(/[?.!,;:'"()]/g, '')
+    .split(/\s+/)
+    .filter((w) => w.length > 0 && !STOP_WORDS.has(w))
+    .map((w) => PLURAL_MAP[w] || w)
+    .sort();
+  return words.join(' ') || question.toLowerCase().trim();
 }
 
 export function getCached(question) {

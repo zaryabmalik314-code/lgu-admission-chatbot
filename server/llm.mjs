@@ -127,7 +127,7 @@ const recent = (history) => history.slice(-6).map((m) => ({ role: m.role, conten
 /* ------------------------------- Groq -------------------------------- */
 
 let groqClient;
-async function streamGroq({ question, history, context, onDelta }) {
+async function streamGroq({ question, history, context, onDelta, maxTokens }) {
   if (!groqClient) {
     const { default: Groq } = await import('groq-sdk');
     groqClient = new Groq(); // reads GROQ_API_KEY
@@ -136,9 +136,7 @@ async function streamGroq({ question, history, context, onDelta }) {
   const stream = await groqClient.chat.completions.create({
     model: GROQ_MODEL,
     stream: true,
-    max_tokens: 1200,
-    // Low but not zero: these are factual answers read off a fee table, and
-    // the phrasing still has to sound like a person rather than a form.
+    max_tokens: maxTokens,
     temperature: 0.3,
     messages: [
       { role: 'system', content: SYSTEM },
@@ -160,14 +158,12 @@ async function streamGroq({ question, history, context, onDelta }) {
 /* ------------------------------- Gemini ------------------------------ */
 
 let geminiClient;
-async function streamGemini({ question, history, context, onDelta }) {
+async function streamGemini({ question, history, context, onDelta, maxTokens }) {
   if (!geminiClient) {
     const { GoogleGenAI } = await import('@google/genai');
     geminiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   }
 
-  // Gemini uses 'model' where the others use 'assistant', and system text goes
-  // in config.systemInstruction rather than in the message list.
   const contents = [
     ...recent(history).map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
@@ -182,7 +178,7 @@ async function streamGemini({ question, history, context, onDelta }) {
     config: {
       systemInstruction: SYSTEM,
       temperature: 0.3,
-      maxOutputTokens: 1200,
+      maxOutputTokens: maxTokens,
     },
   });
 
@@ -211,7 +207,7 @@ function claudeTuning(model) {
     : {};
 }
 
-async function streamAnthropic({ question, history, context, onDelta }) {
+async function streamAnthropic({ question, history, context, onDelta, maxTokens }) {
   if (!anthropicClient) {
     const { default: Anthropic } = await import('@anthropic-ai/sdk');
     anthropicClient = new Anthropic(); // reads ANTHROPIC_API_KEY
@@ -219,7 +215,7 @@ async function streamAnthropic({ question, history, context, onDelta }) {
 
   const stream = anthropicClient.messages.stream({
     model: CLAUDE_MODEL,
-    max_tokens: 1200,
+    max_tokens: maxTokens,
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     ...claudeTuning(CLAUDE_MODEL),
     messages: [
@@ -255,7 +251,7 @@ async function streamAnthropic({ question, history, context, onDelta }) {
  */
 const STREAM_FN = { groq: streamGroq, gemini: streamGemini, anthropic: streamAnthropic };
 
-export async function answerStream({ question, history = [], chunks, faqHint, onDelta, prefer }) {
+export async function answerStream({ question, history = [], chunks, faqHint, onDelta, prefer, maxTokens = 1200 }) {
   const context = buildContext(chunks, faqHint);
 
   const providers = configuredProviders();
@@ -265,15 +261,13 @@ export async function answerStream({ question, history = [], chunks, faqHint, on
   }
 
   for (const provider of providers) {
-    // Only fall through to the next provider if nothing was streamed yet —
-    // once a partial answer has reached the student, retrying would either
-    // duplicate it or restart mid-sentence, both worse than stopping.
     let started = false;
     try {
       return await STREAM_FN[provider]({
         question,
         history,
         context,
+        maxTokens,
         onDelta: (delta) => { started = true; onDelta(delta); },
       });
     } catch (err) {
