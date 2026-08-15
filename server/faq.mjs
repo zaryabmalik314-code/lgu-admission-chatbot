@@ -1012,6 +1012,61 @@ What would you like to know?`,
  * @returns {{id, answer, sources, lang}|null} a canned answer in the language
  *   the student wrote in, or null to fall through to the retrieval + LLM tier.
  */
+// Words the FAQ regexes actually key off. A typo in one of these ("entery",
+// "shcolarship") can make an otherwise well-formed question miss every
+// intent and fall through to the LLM tier — costing an API call for a
+// question the FAQ tier already has a canned answer for.
+const DOMAIN_KEYWORDS = [
+  'entry', 'test', 'tests', 'admission', 'apply', 'application',
+  'fee', 'fees', 'scholarship', 'scholarships', 'criteria', 'eligibility',
+  'merit', 'deadline', 'document', 'documents', 'structure', 'schedule',
+  'semester', 'credit', 'campus', 'hostel', 'transport', 'program', 'degree',
+  'roadmap', 'course', 'courses', 'apply', 'psychology', 'criminology',
+  'mathematics', 'engineering', 'computer', 'science',
+];
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...new Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+    }
+  }
+  return dp[m][n];
+}
+
+/**
+ * Nudges misspelled domain words toward their correct form so the regex
+ * intents below still fire. Deliberately conservative: only touches words
+ * that AREN'T already a known keyword and are within a small edit distance
+ * of exactly one — a 4-letter word 2 edits from "fee" is more likely a
+ * different word entirely than a typo of "fee".
+ */
+function correctTypos(text) {
+  return text
+    .split(/(\s+)/)
+    .map((tok) => {
+      const clean = tok.replace(/[^a-z]/gi, '').toLowerCase();
+      if (clean.length < 4 || DOMAIN_KEYWORDS.includes(clean)) return tok;
+      const threshold = clean.length <= 5 ? 1 : 2;
+      let best = null;
+      let bestDist = Infinity;
+      for (const kw of DOMAIN_KEYWORDS) {
+        if (Math.abs(kw.length - clean.length) > threshold) continue;
+        const d = levenshtein(clean, kw);
+        if (d < bestDist) {
+          bestDist = d;
+          best = kw;
+        }
+      }
+      return best && bestDist <= threshold ? tok.replace(clean, best) : tok;
+    })
+    .join('');
+}
+
 function looksLikeGibberish(text) {
   const clean = text.replace(/[^a-zA-Z؀-ۿ\s]/g, '').trim();
   if (!clean || clean.length < 2) return true;
@@ -1060,10 +1115,17 @@ export function matchFaq(query, history = []) {
     }
   }
 
+  // Only computed once and only used as a fallback match — the exact query
+  // is always tried first, so a typo-corrected false positive can only ever
+  // rescue a question that would otherwise have missed every intent, never
+  // override a match the exact text already found.
+  const qFixed = correctTypos(q);
+  const fixed = qFixed !== q;
+
   for (const intent of INTENTS) {
-    const anyHit = intent.any.some((re) => re.test(q));
+    const anyHit = intent.any.some((re) => re.test(q) || (fixed && re.test(qFixed)));
     if (!anyHit) continue;
-    if (intent.all && !intent.all.every((re) => re.test(q))) continue;
+    if (intent.all && !intent.all.every((re) => re.test(q) || (fixed && re.test(qFixed)))) continue;
     if (intent.unless?.(q)) continue;
 
     // Urdu script gets the Roman Urdu text rather than an English answer —
