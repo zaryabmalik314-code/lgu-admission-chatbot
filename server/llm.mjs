@@ -48,6 +48,12 @@ export function describeProvider() {
   return `${PROVIDER}/${MODEL_OF[PROVIDER] || GROQ_MODEL}`;
 }
 
+// What answerStream() returns when every configured provider failed — a
+// transient outage, not a real answer. Exported so callers (the cache) can
+// recognise it and skip caching it, rather than serving an outage message
+// to the next student who asks the same question after service recovers.
+export const ALL_PROVIDERS_FAILED_FALLBACK = `Filhal thoda technical load hai. Seedha Admission Office se rabta karein: ${FACTS.admissionOffice} · ${FACTS.email}`;
+
 const SYSTEM = `You are the admissions assistant for Lahore Garrison University (LGU), Lahore, Pakistan. You are embedded as a chat widget on the LGU website and you talk to prospective students and their parents.
 
 ## Grounding
@@ -270,7 +276,6 @@ export async function answerStream({ question, history = [], chunks, faqHint, on
     }
   }
 
-  const fallback = `Filhal thoda technical load hai. Seedha Admission Office se rabta karein: ${FACTS.admissionOffice} · ${FACTS.email}`;
-  onDelta(fallback);
-  return fallback;
+  onDelta(ALL_PROVIDERS_FAILED_FALLBACK);
+  return ALL_PROVIDERS_FAILED_FALLBACK;
 }

@@ -14,7 +14,8 @@ import { fileURLToPath } from 'node:url';
 import { search, loadIndex } from './retrieve.mjs';
 import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS, mentionsProgram, PROGRAM_PATTERN } from './faq.mjs';
 import { checkRateLimit, rateLimitStats } from './ratelimit.mjs';
-import { answerStream, isConfigured, describeProvider } from './llm.mjs';
+import { answerStream, isConfigured, describeProvider, ALL_PROVIDERS_FAILED_FALLBACK } from './llm.mjs';
+import { getCached, setCached, cacheStats } from './cache.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = process.env.PORT || 3000;
@@ -76,6 +77,7 @@ app.get('/api/health', async (req, res) => {
     llm: describeProvider(),
     llmReady: isConfigured() ? true : 'missing API key — running FAQ-only',
     rate: rateLimitStats(),
+    cache: cacheStats(),
   });
 });
 
@@ -142,6 +144,21 @@ app.post('/api/chat', async (req, res) => {
       return stream.end();
     }
 
+    // Tier 1.5 — an exact repeat of a fresh question that already paid for an
+    // LLM call once. Only cacheable with no prior history: a mid-conversation
+    // question can mean something history-dependent that the same text would
+    // answer differently in a different conversation (see cache.mjs).
+    const cacheable = history.length === 0;
+    if (cacheable) {
+      const cached = getCached(question);
+      if (cached) {
+        stream.send('meta', { tier: 'cache', intent: faq?.id });
+        stream.send('delta', { text: cached.text });
+        stream.send('done', { sources: cached.sources });
+        return stream.end();
+      }
+    }
+
     // Tier 2 — retrieve, then ground the model on what we found.
     // Retrieved context is the bulk of the input tokens, so this is the main
     // cost dial after the model choice. Below ~5 the combined fee-structure
@@ -172,7 +189,7 @@ app.post('/api/chat', async (req, res) => {
 
     stream.send('meta', { tier: faq ? 'hybrid' : 'rag', sources: cited.map((c) => c.url) });
 
-    await answerStream({
+    const fullAnswer = await answerStream({
       question,
       history,
       chunks,
@@ -185,10 +202,15 @@ app.post('/api/chat', async (req, res) => {
       },
     });
 
-    stream.send('done', {
-      sources: [...new Set(cited.slice(0, 3).map((c) => c.url))],
-    });
+    const sources = [...new Set(cited.slice(0, 3).map((c) => c.url))];
+    stream.send('done', { sources });
     stream.end();
+
+    // Skip caching the "every provider failed" message — that's a transient
+    // outage, not an answer worth replaying to the next student.
+    if (cacheable && fullAnswer && fullAnswer !== ALL_PROVIDERS_FAILED_FALLBACK) {
+      setCached(question, { text: fullAnswer, sources });
+    }
   } catch (err) {
     const rateLimited = err?.status === 429;
     console.error(rateLimited ? 'chat error: LLM rate limited' : 'chat error:', err);
