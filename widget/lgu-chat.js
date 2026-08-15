@@ -446,7 +446,7 @@
         <svg class="ico-chat" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg>
         <svg class="ico-close" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
-      <div class="tooltip">Need help with admissions? 🎓</div>
+      <div class="tooltip">Need help with admissions? 💬🎓</div>
     </div>
   `;
 
