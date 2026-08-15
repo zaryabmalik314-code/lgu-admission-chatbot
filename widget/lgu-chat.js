@@ -614,8 +614,29 @@
     log.scrollTop = log.scrollHeight;
   }
 
+  function getPageSuggestions() {
+    const path = window.location.pathname.toLowerCase();
+    if (/fee-structure/.test(path)) return ['BSCS fee', 'MBA fee', 'Scholarships', 'How to apply'];
+    if (/admission-criteria|\/admissions/.test(path)) return ['Required documents', 'Entry test dates', 'Fee structure', 'Scholarships'];
+    if (/scholarship/.test(path)) return ['Scholarship criteria', 'How to apply', 'Fee structure'];
+    if (/merit-list/.test(path)) return ['Admission criteria', 'How to apply', 'Fee structure'];
+    if (/admission-test/.test(path)) return ['Entry test dates', 'How to apply', 'Required documents'];
+    const programs = {
+      'computer-science': 'BSCS', 'software-engineering': 'BSSE',
+      'information-technology': 'BSIT', 'data-science': 'BSDS',
+      'artificial-intelligence': 'BS AI', 'computational-mathematics': 'CMAI',
+      'cyber-security': 'Cyber Security', 'psychology': 'BS Psychology',
+      'criminology': 'BS Criminology', 'english': 'BS English',
+      'mba': 'MBA', 'bba': 'BBA', 'urdu': 'BS Urdu', 'mathematics': 'BS Math',
+    };
+    for (const [slug, code] of Object.entries(programs)) {
+      if (path.includes(slug)) return [`${code} fee`, `${code} criteria`, `${code} roadmap`, 'How to apply'];
+    }
+    return null;
+  }
+
   function showSuggestions() {
-    showChips(L().suggestions);
+    showChips(getPageSuggestions() || L().suggestions);
   }
 
   function getFollowUps(question) {
@@ -749,8 +770,19 @@
       attachFeedback(bubble, question, answer, currentTier, currentIntent);
       showChips(getFollowUps(question), 'follow-chips');
     } catch (err) {
+      const OFFLINE = [
+        { re: /contact|phone|number|email|rabta/, a: 'Admission Office: 042-37181823 / 0322-2757543, 0329-4292976\nEmail: admissions@lgu.edu.pk\nMain: 042-37181821-22' },
+        { re: /apply|admission|dakhla|form/, a: 'Apply online: [admissions.lgu.edu.pk](https://admissions.lgu.edu.pk/)\n\nAdmission Office: 042-37181823 / 0322-2757543' },
+        { re: /fee|fees|kitni/, a: 'Fee details vary by program: [lgu.edu.pk/fee-structure](https://lgu.edu.pk/fee-structure/)\n\nAdmission Office: 042-37181823 / 0322-2757543' },
+        { re: /criteria|eligibility|marks|merit/, a: 'Admission criteria: [lgu.edu.pk/admission-criteria](https://lgu.edu.pk/admission-criteria/)\n\nAdmission Office: 042-37181823 / 0322-2757543' },
+        { re: /scholarship|wazifa/, a: 'Scholarship info: [lgu.edu.pk/scholarships](https://lgu.edu.pk/scholarships/)\n\nAdmission Office: 042-37181823 / 0322-2757543' },
+        { re: /program|degree|course|offered/, a: 'See all programs: [lgu.edu.pk/admissions](https://lgu.edu.pk/admissions/)\n\nAdmission Office: 042-37181823 / 0322-2757543' },
+      ];
+      const match = OFFLINE.find((f) => f.re.test(question.toLowerCase()));
       bubble.innerHTML = md(
-        'Server se rabta nahi ho saka. Admission Office: 042-37181823 / 0322-2757543'
+        match
+          ? match.a + '\n\n*(Offline — latest info ke liye thodi der baad try karein)*'
+          : 'Server se rabta nahi ho saka. Admission Office: 042-37181823 / 0322-2757543'
       );
     } finally {
       busy = false;

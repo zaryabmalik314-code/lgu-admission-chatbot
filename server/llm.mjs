@@ -73,7 +73,7 @@ Reply in the SAME language the student wrote in. Decide from their message alone
 Never switch language part-way through an answer. Keep proper nouns, program names, and numbers as-is in every language.
 
 ## Style
-- Short. Two to five sentences, or a small markdown table for anything with numbers.
+- STRICT LENGTH: maximum 3–4 sentences of prose. Tables and bullet lists don't count toward this limit, but keep them compact too.
 - Lead with the direct answer; put caveats after.
 - Use a markdown table when quoting fee structures or criteria — never a wall of prose.
 - No preamble ("Great question!", "Sure!"). Answer immediately.
@@ -255,7 +255,7 @@ async function streamAnthropic({ question, history, context, onDelta, maxTokens,
  */
 const STREAM_FN = { groq: streamGroq, gemini: streamGemini, anthropic: streamAnthropic };
 
-export async function answerStream({ question, history = [], chunks, faqHint, onDelta, prefer, maxTokens = 1200, lang }) {
+export async function answerStream({ question, history = [], chunks, faqHint, onDelta, prefer, maxTokens = 800, lang }) {
   const context = buildContext(chunks, faqHint);
 
   const providers = configuredProviders();

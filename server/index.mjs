@@ -227,7 +227,7 @@ app.post('/api/chat', async (req, res) => {
       chunks,
       faqHint: faq?.answer,
       prefer: faq ? 'groq' : 'gemini',
-      maxTokens: faq ? 400 : 1200,
+      maxTokens: faq ? 400 : 800,
       lang: effectiveLang,
       onDelta: (text) => {
         if (!closed) {
