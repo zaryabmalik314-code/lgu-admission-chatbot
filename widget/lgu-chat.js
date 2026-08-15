@@ -20,14 +20,29 @@
   const TITLE = script?.dataset.title || 'LGU Admissions';
   const VOICE_LANG = script?.dataset.voiceLang || 'ur-PK';
 
-  const SUGGESTIONS = [
-    'Fee structure',
-    'CMAI kya hai?',
-    'Is CMAI recognized by HEC?',
-    'Admission criteria kya hai?',
-    'How do I apply?',
-    'Scholarships available hain?',
-  ];
+  const LANGS = {
+    en: {
+      placeholder: 'Type your question...',
+      powered: 'Powered by LGU AI',
+      listen: 'Listen',
+      listening: 'Listening...',
+      greeting: "Hi! I'm LGU's admissions assistant.\n\nAsk me about programs, fees, criteria, scholarships, or how to apply.",
+      suggestions: ['Fee structure', 'What is CMAI?', 'Admission criteria', 'How to apply?', 'Available scholarships', 'Is CMAI HEC recognized?'],
+    },
+    ur: {
+      placeholder: 'Apna sawal likhein...',
+      powered: 'Powered by LGU AI',
+      listen: 'Sunein',
+      listening: 'Sun raha hoon…',
+      greeting: 'Assalam-o-Alaikum! Main LGU Admissions ka assistant hoon.\n\nFees, criteria, scholarships ya apply karne ke baare mein kuch bhi poochein.',
+      suggestions: ['Fee structure', 'CMAI kya hai?', 'Is CMAI recognized by HEC?', 'Admission criteria kya hai?', 'Apply kaise karein?', 'Scholarships available hain?'],
+    },
+  };
+
+  const LK = 'lgu-chat-lang';
+  let lang;
+  try { lang = localStorage.getItem(LK) || 'ur'; } catch { lang = 'ur'; }
+  const L = () => LANGS[lang];
 
   const SESSION_KEY = 'lgu-chat-session';
   let sessionId;
@@ -406,6 +421,16 @@
       .wrap.dark .dm-toggle .ico-moon { opacity: 0; transform: rotate(-90deg) scale(.5); }
       .wrap.dark .dm-toggle .ico-sun { opacity: 1; transform: rotate(0) scale(1); }
 
+      /* Language toggle */
+      .lang-toggle {
+        background: rgba(255,255,255,.1); border: 0; color: #fff;
+        padding: 2px 8px; border-radius: 8px; cursor: pointer;
+        font-size: 11px; font-weight: 700; letter-spacing: .5px;
+        transition: background .25s, transform .25s; flex-shrink: 0;
+      }
+      .lang-toggle:hover { background: rgba(255,255,255,.2); transform: scale(1.08); }
+      .lang-toggle:active { transform: scale(.92); }
+
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
           animation-duration: 0.01ms !important;
@@ -424,6 +449,7 @@
             <div class="t">${TITLE}</div>
             <div class="s"><span class="live"></span>Online</div>
           </div>
+          <button class="lang-toggle" aria-label="Switch language">${lang === 'ur' ? 'EN' : 'UR'}</button>
           <button class="dm-toggle" aria-label="Toggle dark mode">
             <svg class="ico-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
             <svg class="ico-sun" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0-5a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm0 18a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm9-9a1 1 0 0 1 0 2h-1a1 1 0 1 1 0-2h1zM4 11a1 1 0 0 1 0 2H3a1 1 0 1 1 0-2h1zm14.36-5.95a1 1 0 0 1 0 1.41l-.7.71a1 1 0 0 1-1.42-1.42l.71-.7a1 1 0 0 1 1.41 0zM7.05 17.66a1 1 0 0 1 0 1.41l-.7.71a1 1 0 1 1-1.42-1.42l.71-.7a1 1 0 0 1 1.41 0zm11.9 0a1 1 0 0 1-1.41 0l-.71-.7a1 1 0 0 1 1.42-1.42l.7.71a1 1 0 0 1 0 1.41zM7.05 6.34a1 1 0 0 1-1.41 0l-.71-.7a1 1 0 0 1 1.42-1.42l.7.71a1 1 0 0 1 0 1.41z"/></svg>
@@ -435,7 +461,7 @@
           <button type="button" class="mic" aria-label="Speak your question" title="Speak your question">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 15a3 3 0 003-3V6a3 3 0 00-6 0v6a3 3 0 003 3z"/><path d="M17 12a5 5 0 01-10 0H5a7 7 0 006 6.92V22h2v-3.08A7 7 0 0019 12h-2z"/></svg>
           </button>
-          <input type="text" dir="auto" placeholder="Apna sawal likhein..." autocomplete="off" />
+          <input type="text" dir="auto" placeholder="${L().placeholder}" autocomplete="off" />
           <button type="submit" class="send" aria-label="Send">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
           </button>
@@ -470,6 +496,19 @@
   if (darkPref === '1') applyDark(true);
   else if (darkPref === null && matchMedia('(prefers-color-scheme: dark)').matches) applyDark(true);
   dmBtn.addEventListener('click', () => applyDark(!wrap.classList.contains('dark')));
+
+  const langBtn = $('.lang-toggle');
+  function applyLang(l) {
+    lang = l;
+    try { localStorage.setItem(LK, l); } catch {}
+    const labels = L();
+    langBtn.textContent = l === 'ur' ? 'EN' : 'UR';
+    input.placeholder = labels.placeholder;
+    root.querySelector('.powered').textContent = labels.powered;
+  }
+  langBtn.addEventListener('click', () => {
+    applyLang(lang === 'ur' ? 'en' : 'ur');
+  });
 
   const history = [];
   let busy = false;
@@ -530,16 +569,16 @@
     return el.querySelector('.b');
   }
 
-  function showSuggestions() {
+  function showChips(items, cls) {
     const el = document.createElement('div');
-    el.className = 'chips';
-    for (const s of SUGGESTIONS) {
+    el.className = 'chips' + (cls ? ' ' + cls : '');
+    for (const s of items) {
       const c = document.createElement('button');
       c.className = 'chip';
       c.type = 'button';
       c.textContent = s;
       c.addEventListener('click', () => {
-        el.remove();
+        root.querySelectorAll('.chips').forEach((ch) => ch.remove());
         ask(s);
       });
       el.appendChild(c);
@@ -548,13 +587,36 @@
     log.scrollTop = log.scrollHeight;
   }
 
+  function showSuggestions() {
+    showChips(L().suggestions);
+  }
+
+  function getFollowUps(question) {
+    const q = question.toLowerCase();
+    const pgm = q.match(/\b(bscs|bsse|bsit|bsds|bsai|cmai|bba|mba|bsms|mscs|mcs|bsaf|pharmd|dpt|llb)\b/i);
+    const p = pgm ? pgm[1].toUpperCase() : null;
+
+    if (/fee|fees|tuition|cost|kitni|paisa/.test(q))
+      return p ? [`${p} criteria`, 'Scholarships', 'How to apply'] : ['Scholarships', 'How to apply', 'Required documents'];
+    if (/criteria|eligibility|marks|merit|percentage|kitne/.test(q))
+      return p ? [`${p} fee`, 'How to apply', 'Scholarships'] : ['Fee structure', 'How to apply', 'Entry test dates'];
+    if (/scholarship|wazifa/.test(q))
+      return ['How to apply', 'Fee structure', 'Required documents'];
+    if (/apply|admission|dakhla|form/.test(q))
+      return ['Required documents', 'Entry test dates', 'Fee structure'];
+    if (/document|kagaz|dastawez|required|submit/.test(q))
+      return ['How to apply', 'Entry test dates', 'Fee structure'];
+    if (/test|entry|imtihan/.test(q))
+      return ['How to apply', 'Required documents', 'Admission criteria'];
+    if (/program|degree|course|offered/.test(q))
+      return ['Fee structure', 'Admission criteria', 'How to apply'];
+    if (/hostel|transport|bus|campus/.test(q))
+      return ['Fee structure', 'How to apply', 'Programs offered'];
+    return ['Fee structure', 'Admission criteria', 'How to apply'];
+  }
+
   function greet() {
-    addMsg(
-      'bot',
-      md(
-        'Assalam-o-Alaikum! Main LGU Admissions ka assistant hoon.\n\nFees, criteria, scholarships ya apply karne ke baare mein kuch bhi poochein.'
-      )
-    );
+    addMsg('bot', md(L().greeting));
     showSuggestions();
   }
 
@@ -657,6 +719,7 @@
       history.push({ role: 'user', content: question }, { role: 'assistant', content: answer });
       attachReadAloud(bubble, answer);
       attachFeedback(bubble, question, answer, currentTier, currentIntent);
+      showChips(getFollowUps(question), 'follow-chips');
     } catch (err) {
       bubble.innerHTML = md(
         'Server se rabta nahi ho saka. Admission Office: 042-37181823 / 0322-2757543'
@@ -737,7 +800,7 @@
       rec.onstart = () => {
         listening = true;
         micBtn.classList.add('listening');
-        input.placeholder = 'Sun raha hoon…';
+        input.placeholder = L().listening;
       };
       rec.onresult = (e) => {
         input.value = Array.from(e.results)
@@ -747,7 +810,7 @@
       rec.onend = () => {
         listening = false;
         micBtn.classList.remove('listening');
-        input.placeholder = 'Apna sawal likhein...';
+        input.placeholder = L().placeholder;
         const q = input.value.trim();
         if (q) {
           input.value = '';
@@ -757,7 +820,7 @@
       rec.onerror = () => {
         listening = false;
         micBtn.classList.remove('listening');
-        input.placeholder = 'Apna sawal likhein...';
+        input.placeholder = L().placeholder;
       };
       try {
         rec.start();
@@ -805,7 +868,7 @@
     const btn = document.createElement('button');
     btn.className = 'read';
     btn.type = 'button';
-    btn.innerHTML = `${SPEAKER_SVG}<span>Sunein</span>`;
+    btn.innerHTML = `${SPEAKER_SVG}<span>${L().listen}</span>`;
     btn.addEventListener('click', () => {
       if (btn.classList.contains('playing')) {
         speechSynthesis.cancel();

@@ -132,6 +132,8 @@ app.post('/api/chat', async (req, res) => {
     const msg =
       limit.scope === 'global'
         ? `Abhi bohot zyada sawal aa rahe hain. Thodi der baad koshish karein, ya Admission Office se rabta karein: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`
+        : limit.scope === 'quota'
+        ? `Aap ke aaj ke ${limit.dailyMax} messages poore ho gaye. Kal dobara koshish karein, ya Admission Office se rabta karein: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`
         : `Aap ne bohot tezi se kai sawal poochh liye. Thodi der ruk kar dobara koshish karein.`;
     res.set('Retry-After', String(limit.retryAfter));
     return res.status(429).json({ error: 'rate_limited', scope: limit.scope, message: msg });
