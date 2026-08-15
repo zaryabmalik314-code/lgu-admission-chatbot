@@ -869,7 +869,7 @@ export function matchFaq(query, history = []) {
   if (isMarksOrStreamOnly) {
     const priorUserText = history
       .filter((h) => h.role === 'user')
-      .slice(-3)
+      .slice(-1)
       .map((h) => h.content)
       .join(' ');
     if (SCHOLARSHIP_PATTERN.test(priorUserText)) {
