@@ -465,7 +465,6 @@
       busy = false;
       sendBtn.disabled = false;
       input.focus();
-      showSuggestions();
       log.scrollTop = log.scrollHeight;
     }
   }
