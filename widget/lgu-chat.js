@@ -429,6 +429,7 @@
         padding: 2px 8px; border-radius: 8px; cursor: pointer;
         font-size: 11px; font-weight: 700; letter-spacing: .5px;
         transition: background .25s, transform .25s; flex-shrink: 0;
+        position: relative;
       }
       .lang-toggle:hover { background: rgba(255,255,255,.2); transform: scale(1.08); }
       .lang-toggle:active { transform: scale(.92); }
@@ -500,16 +501,20 @@
   dmBtn.addEventListener('click', () => applyDark(!wrap.classList.contains('dark')));
 
   const langBtn = $('.lang-toggle');
-  function applyLang(l) {
+  function applyLang(l, rerender) {
     lang = l;
     try { localStorage.setItem(LK, l); } catch {}
     const labels = L();
     langBtn.textContent = labels.toggle;
     input.placeholder = labels.placeholder;
     root.querySelector('.powered').textContent = labels.powered;
+    if (rerender && history.length === 0) {
+      log.innerHTML = '';
+      greet();
+    }
   }
   langBtn.addEventListener('click', () => {
-    applyLang(lang === 'en' ? 'ur' : 'en');
+    applyLang(lang === 'en' ? 'ur' : 'en', true);
   });
 
   const history = [];
