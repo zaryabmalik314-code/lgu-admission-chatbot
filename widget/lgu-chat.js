@@ -15,15 +15,9 @@
 
   const script = document.currentScript;
   const API = (script?.dataset.api || new URL(script.src).origin).replace(/\/$/, '');
-  // Matches the LGU admission site: deep green structure + gold call-to-action.
-  // ACCENT drives the header, bubble and the student's own messages; GOLD is the
-  // send button and interactive highlights, echoing the site's "Apply Now".
   const ACCENT = script?.dataset.accent || '#14532d';
   const GOLD = script?.dataset.gold || '#f4b41a';
   const TITLE = script?.dataset.title || 'LGU Admissions';
-  // Speech-recognition language. Urdu (ur-PK) transcribes spoken Urdu to Urdu
-  // script, which the bot handles; set data-voice-lang="en-US" for an
-  // English-speaking audience.
   const VOICE_LANG = script?.dataset.voiceLang || 'ur-PK';
 
   const SUGGESTIONS = [
@@ -34,9 +28,6 @@
     'Scholarships available hain?',
   ];
 
-  // A stable per-browser id so the server can rate limit one person without
-  // keying on IP — the whole campus shares one NAT address, so an IP bucket
-  // would lock out everyone on the wifi at once.
   const SESSION_KEY = 'lgu-chat-session';
   let sessionId;
   try {
@@ -46,7 +37,6 @@
       localStorage.setItem(SESSION_KEY, sessionId);
     }
   } catch {
-    // Private mode or blocked storage — fall back to a per-page-load id.
     sessionId = String(Math.random()).slice(2) + Date.now();
   }
 
@@ -58,186 +48,300 @@
 
   root.innerHTML = `
     <style>
-      :host, * { box-sizing: border-box; }
+      :host, * { box-sizing: border-box; margin: 0; padding: 0; }
       .wrap {
         position: fixed; bottom: 22px; right: 22px;
         font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
         font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
       }
 
-      /* Launcher */
+      /* ── Launcher bubble ── */
       .bubble {
-        width: 60px; height: 60px; border-radius: 50%; border: 0;
-        background: ${ACCENT}; color: #fff; cursor: pointer; position: relative;
-        box-shadow: 0 10px 28px rgba(20,83,45,.4), 0 3px 8px rgba(0,0,0,.16);
+        width: 62px; height: 62px; border-radius: 50%; border: 0;
+        background: linear-gradient(135deg, ${ACCENT} 0%, #1a6b3c 100%);
+        color: #fff; cursor: pointer; position: relative;
+        box-shadow: 0 8px 32px rgba(20,83,45,.45), 0 2px 8px rgba(0,0,0,.12);
         display: grid; place-items: center;
-        transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s;
+        transition: transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .28s;
       }
-      .bubble:hover { transform: scale(1.08); box-shadow: 0 14px 34px rgba(20,83,45,.48); }
-      .bubble:active { transform: scale(.98); }
-      .bubble svg { width: 27px; height: 27px; position: relative; z-index: 1; }
+      .bubble:hover {
+        transform: scale(1.1);
+        box-shadow: 0 12px 40px rgba(20,83,45,.5), 0 4px 12px rgba(0,0,0,.15);
+      }
+      .bubble:active { transform: scale(.95); }
+      .bubble .ico-chat, .bubble .ico-close {
+        position: absolute; width: 26px; height: 26px;
+        transition: transform .35s cubic-bezier(.4,0,.2,1), opacity .25s;
+      }
+      .bubble .ico-close { opacity: 0; transform: rotate(-90deg) scale(.6); }
+      .bubble.active .ico-chat { opacity: 0; transform: rotate(90deg) scale(.6); }
+      .bubble.active .ico-close { opacity: 1; transform: rotate(0) scale(1); }
       .bubble::after {
         content: ""; position: absolute; inset: 0; border-radius: 50%;
-        animation: ring 2.6s ease-out infinite;
+        animation: ring 2.8s ease-out infinite;
       }
+      .bubble.active::after { animation: none; }
       @keyframes ring {
-        0% { box-shadow: 0 0 0 0 rgba(20,83,45,.34); }
-        70% { box-shadow: 0 0 0 15px rgba(20,83,45,0); }
+        0% { box-shadow: 0 0 0 0 rgba(20,83,45,.3); }
+        70% { box-shadow: 0 0 0 16px rgba(20,83,45,0); }
         100% { box-shadow: 0 0 0 0 rgba(20,83,45,0); }
       }
 
-      /* Panel — animated open (fade + rise + scale from the launcher) */
+      /* Tooltip label next to the bubble */
+      .tooltip {
+        position: absolute; right: 72px; top: 50%; transform: translateY(-50%);
+        background: #fff; color: #1f2b25; padding: 8px 16px; border-radius: 12px;
+        font-size: 13.5px; font-weight: 550; white-space: nowrap;
+        box-shadow: 0 4px 20px rgba(0,0,0,.12), 0 1px 4px rgba(0,0,0,.08);
+        opacity: 0; pointer-events: none;
+        animation: tooltipIn 0.5s 2s cubic-bezier(.2,.8,.3,1) forwards;
+      }
+      .tooltip::after {
+        content: ""; position: absolute; right: -6px; top: 50%; transform: translateY(-50%);
+        border: 6px solid transparent; border-left-color: #fff;
+      }
+      .bubble.active ~ .tooltip { opacity: 0 !important; animation: none; }
+      @keyframes tooltipIn {
+        from { opacity: 0; transform: translateY(-50%) translateX(8px); }
+        to { opacity: 1; transform: translateY(-50%) translateX(0); }
+      }
+
+      /* ── Panel ── */
       .panel {
         position: absolute; bottom: 80px; right: 0;
-        width: min(94vw, 402px); height: min(78vh, 620px);
+        width: min(94vw, 410px); height: min(80vh, 640px);
         background: #fff; border-radius: 20px; overflow: hidden;
         display: flex; flex-direction: column;
-        box-shadow: 0 24px 60px rgba(0,0,0,.22), 0 6px 16px rgba(0,0,0,.1);
-        border: 1px solid rgba(0,0,0,.05);
+        box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 4px 16px rgba(0,0,0,.08);
+        border: 1px solid rgba(0,0,0,.06);
         opacity: 0; visibility: hidden; pointer-events: none;
-        transform: translateY(14px) scale(.97); transform-origin: bottom right;
-        transition: opacity .24s ease, transform .3s cubic-bezier(.34,1.4,.64,1), visibility .24s;
+        transform: translateY(20px) scale(.92); transform-origin: bottom right;
+        transition: opacity .3s ease, transform .4s cubic-bezier(.16,1,.3,1), visibility .3s;
       }
-      .panel.open { opacity: 1; visibility: visible; pointer-events: auto; transform: none; }
+      .panel.open {
+        opacity: 1; visibility: visible; pointer-events: auto;
+        transform: translateY(0) scale(1);
+      }
 
-      /* Header */
+      /* ── Header ── */
       header {
-        background: linear-gradient(135deg, ${ACCENT}, #0e3a1f);
-        color: #fff; padding: 15px 16px; display: flex; align-items: center; gap: 11px; flex-shrink: 0;
+        background: linear-gradient(135deg, ${ACCENT} 0%, #0c3520 60%, #0a2e1b 100%);
+        color: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+        position: relative; overflow: hidden;
+      }
+      header::before {
+        content: ""; position: absolute; inset: 0;
+        background: radial-gradient(circle at 80% 20%, rgba(244,180,26,.08) 0%, transparent 60%);
       }
       header .ava {
-        width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-        background: #fff; border: 1px solid rgba(255,255,255,.4);
+        width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+        background: #fff; border: 2px solid rgba(255,255,255,.35);
         display: grid; place-items: center; overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,.15);
+        position: relative;
       }
       header .ava img { width: 100%; height: 100%; object-fit: cover; }
-      header .meta { min-width: 0; }
-      header .t { font-weight: 650; font-size: 15.5px; letter-spacing: .1px; }
-      header .s { font-size: 12px; opacity: .88; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+      header .meta { min-width: 0; position: relative; }
+      header .t { font-weight: 650; font-size: 16px; letter-spacing: .2px; }
+      header .s {
+        font-size: 12px; opacity: .9; display: flex; align-items: center; gap: 6px; margin-top: 2px;
+      }
       header .s .live {
-        width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
-        box-shadow: 0 0 6px rgba(74,222,128,.8);
+        width: 8px; height: 8px; border-radius: 50%; background: #4ade80;
+        box-shadow: 0 0 8px rgba(74,222,128,.9);
+        animation: livePulse 2s ease-in-out infinite;
+      }
+      @keyframes livePulse {
+        0%, 100% { opacity: 1; } 50% { opacity: .6; }
       }
       header .close {
-        margin-left: auto; background: transparent; border: 0; color: #fff;
-        font-size: 25px; line-height: 1; cursor: pointer; opacity: .8; padding: 0 4px;
-        transition: opacity .15s, transform .15s;
+        margin-left: auto; background: rgba(255,255,255,.12); border: 0; color: #fff;
+        width: 32px; height: 32px; border-radius: 50%;
+        font-size: 20px; line-height: 1; cursor: pointer;
+        display: grid; place-items: center;
+        transition: background .2s, transform .2s;
+        position: relative;
       }
-      header .close:hover { opacity: 1; transform: rotate(90deg); }
+      header .close:hover { background: rgba(255,255,255,.22); transform: rotate(90deg); }
 
-      /* Per-message "read aloud" control, sits under a bot answer. */
+      /* ── Per-message "read aloud" control ── */
       .read {
-        margin-top: 9px; display: inline-flex; align-items: center; gap: 5px;
+        margin-top: 8px; display: inline-flex; align-items: center; gap: 5px;
         background: transparent; border: 0; cursor: pointer; padding: 2px 0;
-        color: ${ACCENT}; font-size: 12.5px; font-weight: 500; opacity: .82;
-        transition: opacity .15s;
+        color: ${ACCENT}; font-size: 12px; font-weight: 550; opacity: .7;
+        transition: opacity .2s, color .2s;
       }
       .read:hover { opacity: 1; }
-      .read.playing { color: #e53935; }
-      .read svg { width: 15px; height: 15px; }
+      .read.playing { color: #e53935; opacity: 1; }
+      .read svg { width: 14px; height: 14px; }
 
-      /* Log */
-      .log { flex: 1; overflow-y: auto; padding: 18px 16px; background: #f4f6f4; }
-      .log::-webkit-scrollbar { width: 6px; }
-      .log::-webkit-scrollbar-thumb { background: rgba(0,0,0,.14); border-radius: 3px; }
+      /* ── Chat log ── */
+      .log {
+        flex: 1; overflow-y: auto; padding: 20px 16px;
+        background: linear-gradient(180deg, #f0f4f0 0%, #f7f9f7 100%);
+      }
+      .log::-webkit-scrollbar { width: 5px; }
+      .log::-webkit-scrollbar-thumb { background: rgba(0,0,0,.12); border-radius: 4px; }
       .log::-webkit-scrollbar-track { background: transparent; }
 
-      /* Messages */
-      .msg { margin-bottom: 12px; display: flex; animation: rise .3s cubic-bezier(.2,.8,.3,1) both; }
+      /* ── Messages ── */
+      .msg { margin-bottom: 14px; display: flex; }
       .msg.user { justify-content: flex-end; }
-      @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+      .msg.bot { animation: msgBot .4s cubic-bezier(.2,.9,.3,1) both; }
+      .msg.user { animation: msgUser .35s cubic-bezier(.2,.9,.3,1) both; }
+      @keyframes msgBot {
+        from { opacity: 0; transform: translateX(-12px) translateY(6px); }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes msgUser {
+        from { opacity: 0; transform: translateX(12px) translateY(6px); }
+        to { opacity: 1; transform: none; }
+      }
       .b {
-        max-width: 85%; padding: 11px 14px; border-radius: 16px; font-size: 14.5px; line-height: 1.55;
+        max-width: 84%; padding: 12px 16px; font-size: 14.5px; line-height: 1.6;
         white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere;
       }
       .msg.bot .b {
-        background: #fff; color: #1f2b25; box-shadow: 0 1px 3px rgba(0,0,0,.06);
-        border-bottom-left-radius: 5px;
+        background: #fff; color: #1f2b25; border-radius: 18px 18px 18px 6px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.03);
       }
       .msg.user .b {
-        background: ${ACCENT}; color: #fff; border-bottom-right-radius: 5px;
-        box-shadow: 0 2px 7px rgba(20,83,45,.26);
+        background: linear-gradient(135deg, ${ACCENT}, #1a6b3c);
+        color: #fff; border-radius: 18px 18px 6px 18px;
+        box-shadow: 0 3px 12px rgba(20,83,45,.25);
       }
 
-      /* Answers arrive as markdown; these keep tables and links readable. */
+      /* Markdown in answers */
       .b table { border-collapse: collapse; margin: 10px 0 4px; font-size: 13px; width: 100%; }
-      .b th, .b td { border: 1px solid #e4e9e5; padding: 6px 9px; text-align: left; }
+      .b th, .b td { border: 1px solid #e0e6e1; padding: 7px 10px; text-align: left; }
       .b th { background: #eef3ef; font-weight: 600; }
-      .b a { color: ${ACCENT}; font-weight: 500; text-decoration: none; border-bottom: 1px solid rgba(20,83,45,.3); }
+      .b a {
+        color: ${ACCENT}; font-weight: 550; text-decoration: none;
+        border-bottom: 1.5px solid rgba(20,83,45,.25);
+        transition: border-color .2s;
+      }
       .b a:hover { border-bottom-color: ${ACCENT}; }
       .b ul { margin: 6px 0; padding-left: 20px; }
       .b li { margin: 3px 0; }
       .b code { background: #eef3ef; padding: 1px 5px; border-radius: 5px; font-size: 13px; }
       .b strong { font-weight: 650; }
 
-      .src { margin-top: 8px; font-size: 11.5px; color: #7a827a; }
-      .src a { color: #7a827a; }
+      .src { margin-top: 8px; font-size: 11px; color: #8a928a; }
+      .src a { color: #8a928a; text-decoration: none; border-bottom: 1px dotted #bbb; }
+      .src a:hover { color: ${ACCENT}; border-bottom-color: ${ACCENT}; }
 
-      .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+      /* ── Suggestion chips ── */
+      .chips {
+        display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+        animation: chipsIn .5s cubic-bezier(.2,.8,.3,1) both;
+      }
+      @keyframes chipsIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: none; }
+      }
       .chip {
-        background: #fff; border: 1px solid #dbe2dc; border-radius: 999px;
-        padding: 7px 13px; font-size: 13px; cursor: pointer; color: ${ACCENT}; font-weight: 500;
-        box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: transform .15s, box-shadow .15s, border-color .15s, background .15s;
+        background: #fff; border: 1.5px solid #dde4dd; border-radius: 999px;
+        padding: 8px 16px; font-size: 13px; cursor: pointer; color: ${ACCENT}; font-weight: 550;
+        box-shadow: 0 1px 3px rgba(0,0,0,.04);
+        transition: all .25s cubic-bezier(.2,.8,.3,1);
       }
       .chip:hover {
-        border-color: ${GOLD}; background: #fffdf5;
-        transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.08);
+        border-color: ${GOLD}; background: linear-gradient(135deg, #fffef8, #fffdf2);
+        transform: translateY(-2px); box-shadow: 0 6px 16px rgba(244,180,26,.18);
+        color: #0e3a1f;
       }
+      .chip:active { transform: translateY(0) scale(.97); }
 
+      /* ── Typing indicator ── */
+      .dots { display: flex; align-items: center; gap: 5px; padding: 4px 0; }
       .dots span {
-        display: inline-block; width: 7px; height: 7px; margin-right: 4px;
-        border-radius: 50%; background: ${ACCENT}; opacity: .3; animation: bl 1.2s infinite;
+        display: block; width: 8px; height: 8px;
+        border-radius: 50%; background: ${ACCENT}; opacity: .25;
+        animation: bounce 1.4s infinite ease-in-out;
       }
+      .dots span:nth-child(1) { animation-delay: 0s; }
       .dots span:nth-child(2) { animation-delay: .2s; }
       .dots span:nth-child(3) { animation-delay: .4s; }
-      @keyframes bl { 0%,60%,100% { opacity: .25 } 30% { opacity: .9 } }
+      @keyframes bounce {
+        0%, 60%, 100% { transform: translateY(0); opacity: .25; }
+        30% { transform: translateY(-8px); opacity: .9; }
+      }
 
-      /* Input */
-      form { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid #eaeeea; background: #fff; flex-shrink: 0; align-items: center; }
+      /* ── Input area ── */
+      form {
+        display: flex; gap: 8px; padding: 14px 16px;
+        border-top: 1px solid #eef1ee; background: #fff; flex-shrink: 0;
+        align-items: center;
+      }
       input {
-        flex: 1; padding: 11px 15px; border: 1.5px solid #dbe2dc; border-radius: 24px;
+        flex: 1; padding: 12px 16px; border: 2px solid #e2e8e3; border-radius: 24px;
         font: inherit; font-size: 14.5px; outline: none; min-width: 0; background: #f8faf8;
-        transition: border-color .15s, box-shadow .15s, background .15s;
+        transition: border-color .25s, box-shadow .25s, background .25s;
       }
-      input:focus { border-color: ${GOLD}; box-shadow: 0 0 0 3px rgba(244,180,26,.18); background: #fff; }
+      input:focus {
+        border-color: ${GOLD}; background: #fff;
+        box-shadow: 0 0 0 4px rgba(244,180,26,.15);
+      }
+      input::placeholder { color: #9ca89c; }
       .send {
-        background: ${GOLD}; color: ${ACCENT}; border: 0; border-radius: 50%;
-        width: 42px; height: 42px; cursor: pointer; flex-shrink: 0;
-        display: grid; place-items: center; box-shadow: 0 2px 8px rgba(244,180,26,.4);
-        transition: transform .15s, filter .15s;
+        background: linear-gradient(135deg, ${GOLD}, #e6a817);
+        color: ${ACCENT}; border: 0; border-radius: 50%;
+        width: 44px; height: 44px; cursor: pointer; flex-shrink: 0;
+        display: grid; place-items: center;
+        box-shadow: 0 3px 12px rgba(244,180,26,.35);
+        transition: transform .2s cubic-bezier(.2,.8,.3,1), box-shadow .2s, filter .2s;
       }
-      .send:hover { filter: brightness(1.06); transform: scale(1.05); }
-      .send:disabled { opacity: .45; cursor: default; transform: none; box-shadow: none; }
-      /* Mic — neutral until listening, then pulses red so it's obvious it's live. */
+      .send:hover {
+        transform: scale(1.08);
+        box-shadow: 0 5px 18px rgba(244,180,26,.45);
+      }
+      .send:active { transform: scale(.95); }
+      .send:disabled { opacity: .4; cursor: default; transform: none; box-shadow: none; filter: grayscale(.3); }
+      .send svg { transition: transform .2s; }
+      .send:not(:disabled):hover svg { transform: translateX(1px); }
+
+      /* Mic button */
       .mic {
-        background: #eef3ef; color: #40514a; border: 0; border-radius: 50%;
-        width: 42px; height: 42px; cursor: pointer; flex-shrink: 0;
-        display: grid; place-items: center; transition: background .15s;
+        background: #eef3ef; color: #4a5e50; border: 0; border-radius: 50%;
+        width: 44px; height: 44px; cursor: pointer; flex-shrink: 0;
+        display: grid; place-items: center;
+        transition: background .2s, color .2s, transform .2s;
       }
-      .mic:hover { background: #e2e9e3; }
-      .mic.listening { background: #e53935; color: #fff; animation: pulse 1.3s infinite; }
-      @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(229,57,53,.5); }
-        70% { box-shadow: 0 0 0 9px rgba(229,57,53,0); }
+      .mic:hover { background: #e0e8e1; color: ${ACCENT}; transform: scale(1.05); }
+      .mic:active { transform: scale(.95); }
+      .mic.listening {
+        background: #e53935; color: #fff;
+        animation: micPulse 1.3s infinite;
+      }
+      @keyframes micPulse {
+        0% { box-shadow: 0 0 0 0 rgba(229,57,53,.45); }
+        70% { box-shadow: 0 0 0 10px rgba(229,57,53,0); }
         100% { box-shadow: 0 0 0 0 rgba(229,57,53,0); }
       }
 
-      /* On phones the floating box breaks when the keyboard opens (vh units
-         don't shrink for the keyboard), so go full-screen instead. Height is
-         also tracked live via the visualViewport API in JS so the input always
-         sits just above the keyboard. */
+      /* ── Powered-by footer ── */
+      .powered {
+        text-align: center; padding: 6px; font-size: 10.5px; color: #b0b8b0;
+        background: #fff; letter-spacing: .2px;
+      }
+
+      /* ── Mobile full-screen ── */
       @media (max-width: 600px) {
         .wrap { bottom: 16px; right: 16px; }
+        .tooltip { display: none; }
         .panel {
           position: fixed; top: 0; left: 0; right: 0; bottom: auto;
           width: 100%; height: 100vh; height: 100dvh; max-height: none;
           border-radius: 0; border: 0;
         }
-        .panel.open ~ .bubble { display: none; } /* full-screen covers it */
+        .panel.open ~ .bubble { display: none; }
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .bubble::after, .msg, .panel { animation: none !important; transition: opacity .15s !important; }
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
       }
     </style>
 
@@ -263,10 +367,13 @@
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
           </button>
         </form>
+        <div class="powered">Powered by LGU AI</div>
       </div>
       <button class="bubble" aria-label="Open admissions chat">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg>
+        <svg class="ico-chat" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg>
+        <svg class="ico-close" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
+      <div class="tooltip">Admission mein help chahiye? 💬</div>
     </div>
   `;
 
@@ -276,16 +383,11 @@
   const form = $('form');
   const input = $('input');
   const sendBtn = form.querySelector('.send');
+  const bubbleBtn = $('.bubble');
 
   const history = [];
   let busy = false;
 
-  /**
-   * Minimal markdown -> HTML. Deliberately not a full parser: the model is
-   * instructed to emit only tables, lists, links, bold and code, and escaping
-   * first means anything it emits outside that set renders as literal text
-   * rather than as markup.
-   */
   function md(src) {
     const esc = src
       .replace(/&/g, '&amp;')
@@ -297,7 +399,6 @@
     let i = 0;
 
     while (i < lines.length) {
-      // Table: a header row followed by a |---|---| separator.
       if (/^\s*\|.*\|\s*$/.test(lines[i]) && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1] || '')) {
         const cells = (r) =>
           r.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
@@ -330,7 +431,6 @@
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-      // Bare URLs, but not ones already inside an href we just built.
       .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>')
       .replace(/\n{3,}/g, '\n\n');
   }
@@ -390,8 +490,6 @@
         body: JSON.stringify({ message: question, history: history.slice(-6) }),
       });
 
-      // Rate limiting replies with JSON, not a stream — show its message
-      // rather than the generic connection error.
       if (res.status === 429) {
         const body = await res.json().catch(() => ({}));
         bubble.innerHTML = md(body.message || 'Thodi der baad koshish karein.');
@@ -404,7 +502,6 @@
       const decoder = new TextDecoder();
       let buf = '';
 
-      // Parse SSE by hand — EventSource can't POST.
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -477,9 +574,6 @@
     ask(q);
   });
 
-  // Keep the full-screen mobile panel sized to the *visible* viewport, which
-  // shrinks when the on-screen keyboard opens — so the input never hides behind
-  // it and the header never scrolls off. No-op on desktop / when closed.
   const vv = window.visualViewport;
   function fitViewport() {
     const mobile = matchMedia('(max-width: 600px)').matches;
@@ -498,16 +592,18 @@
 
   function openPanel() {
     panel.classList.add('open');
+    bubbleBtn.classList.add('active');
     if (!log.children.length) greet();
     fitViewport();
     input.focus();
   }
   function closePanel() {
     panel.classList.remove('open');
+    bubbleBtn.classList.remove('active');
     fitViewport();
   }
 
-  $('.bubble').addEventListener('click', () => {
+  bubbleBtn.addEventListener('click', () => {
     panel.classList.contains('open') ? closePanel() : openPanel();
   });
   $('.close').addEventListener('click', closePanel);
@@ -517,8 +613,6 @@
   });
 
   /* ---------------------------- Voice input --------------------------- */
-  // Browser-native speech recognition — no server, no key, no cost. Hidden
-  // entirely on browsers that don't support it (mainly Firefox).
   const micBtn = $('.mic');
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
@@ -534,8 +628,8 @@
       }
       rec = new SR();
       rec.lang = VOICE_LANG;
-      rec.interimResults = true; // show words in the box as they're recognised
-      rec.continuous = false; // one question per tap
+      rec.interimResults = true;
+      rec.continuous = false;
 
       rec.onstart = () => {
         listening = true;
@@ -554,7 +648,7 @@
         const q = input.value.trim();
         if (q) {
           input.value = '';
-          ask(q); // auto-send what was spoken
+          ask(q);
         }
       };
       rec.onerror = () => {
@@ -571,20 +665,16 @@
   }
 
   /* ---------------------------- Voice output -------------------------- */
-  // A "read aloud" button under each bot answer — tap to hear that message,
-  // tap again to stop. Browser-native, no cost. On browsers without speech
-  // synthesis, attachReadAloud is a no-op so no button appears.
   const canSpeak = 'speechSynthesis' in window;
   const SPEAKER_SVG =
     '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4z"/></svg>';
 
   function speakText(text, btn) {
-    // Strip markdown so tables and links don't get read as punctuation soup.
     const clean = text
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [label](url) -> label
-      .replace(/https?:\/\/\S+/g, '') // bare URLs
-      .replace(/[|#*`_>]/g, ' ') // table pipes, markdown marks
-      .replace(/^[\s-]+/gm, '') // list bullets / rules
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/[|#*`_>]/g, ' ')
+      .replace(/^[\s-]+/gm, '')
       .replace(/\s+/g, ' ')
       .trim();
     if (!clean) return;
@@ -593,7 +683,6 @@
     root.querySelectorAll('.read.playing').forEach((b) => b.classList.remove('playing'));
 
     const u = new SpeechSynthesisUtterance(clean);
-    // Urdu script -> an Urdu voice if the device has one; otherwise default.
     const lang = /[؀-ۿ]/.test(text) ? 'ur-PK' : 'en-US';
     u.lang = lang;
     const voices = speechSynthesis.getVoices();
