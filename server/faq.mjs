@@ -729,9 +729,9 @@ After the test, the merit list is published at ${FACTS.meritUrl}`,
       /difference between cmai and (bs\s*ai|bsai|ai|artificial intelligence)/,
       /cmai.*(better|different|same).*\b(bs\s*ai|bsai|ai)\b/,
     ],
-    answer: `CMAI aur BS AI dono alag 4-year BS degrees hain — donon HEC/NCEAC recognized hain, lekin department aur focus different hai:
+    answer: `CMAI aur BS AI dono alag 4-year BS degrees hain, lekin department aur focus different hai:
 
-**BS Computational Mathematics & AI (CMAI)** — Department of Mathematics, 135 credit hours. Applied math + AI ka combination — theory, modeling, algorithms ki strong base.
+**BS Computational Mathematics & AI (CMAI)** — Department of Mathematics, HEC-recognized, 135 credit hours. Applied math + AI ka combination — theory, modeling, algorithms ki strong base.
 
 **BS Artificial Intelligence (BS AI)** — Computer Science faculty, NCEAC accredited, 131 credit hours. Programming/software engineering-heavy — AI specifically as a CS major.
 
@@ -739,9 +739,9 @@ Note: MS (AI) ek alag cheez hai — woh 2-year graduate degree hai, inn dono BS 
 
 Agar math/theory pasand hai to CMAI, agar coding/software pasand hai to BS AI zyada fit karega. Dono ki fee: ${FACTS.feeUrl}
 Apply: ${FACTS.applyUrl}`,
-    answerEn: `CMAI and BS AI are two separate 4-year BS degrees — both are recognized (HEC/NCEAC), but they differ in department and focus:
+    answerEn: `CMAI and BS AI are two separate 4-year BS degrees, but they differ in department and focus:
 
-**BS Computational Mathematics & AI (CMAI)** — Department of Mathematics, 135 credit hours. Blends applied math with AI — strong grounding in theory, modeling, and algorithms.
+**BS Computational Mathematics & AI (CMAI)** — Department of Mathematics, HEC-recognized, 135 credit hours. Blends applied math with AI — strong grounding in theory, modeling, and algorithms.
 
 **BS Artificial Intelligence (BS AI)** — Computer Science faculty, NCEAC accredited, 131 credit hours. Programming/software-engineering-heavy — AI as a dedicated CS major.
 
@@ -757,11 +757,11 @@ Apply: ${FACTS.applyUrl}`,
   {
     id: 'cmai-hec',
     any: [/cmai.*(hec|recogni|accredit|valid|manya)/, /(hec|recogni|accredit).*(cmai|computational math)/],
-    answer: `Haan, BS Computational Mathematics & AI (CMAI) HEC-recognized degree hai. Ye LGU ke Department of Mathematics ke under aata hai — 4 saal ka program hai, 135 credit hours, aur NCEAC se bhi recognized hai.
+    answer: `Haan, BS Computational Mathematics & AI (CMAI) HEC-recognized degree hai. Ye LGU ke Department of Mathematics ke under aata hai — 4 saal ka program hai, 135 credit hours.
 
 Apply: ${FACTS.applyUrl}
 Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
-    answerEn: `Yes, BS Computational Mathematics & AI (CMAI) is fully HEC-recognized. It's a 4-year program under LGU's Department of Mathematics — 135 credit hours, and also NCEAC recognized.
+    answerEn: `Yes, BS Computational Mathematics & AI (CMAI) is fully HEC-recognized. It's a 4-year program under LGU's Department of Mathematics — 135 credit hours.
 
 Apply: ${FACTS.applyUrl}
 Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
