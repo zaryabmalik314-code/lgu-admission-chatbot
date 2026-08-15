@@ -13,7 +13,7 @@
 export const FACTS = {
   phone: '042-37181821-22',
   admissionOffice: '042-37181823',
-  admissionMobile: '0317-1704869',
+  admissionMobile: '0322-2757543, 0329-4292976',
   email: 'admissions@lgu.edu.pk',
   address: 'Main Campus, Sector C, DHA Phase 6, Lahore',
   applyUrl: 'https://admissions.lgu.edu.pk/',
