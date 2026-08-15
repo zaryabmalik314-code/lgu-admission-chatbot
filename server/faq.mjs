@@ -700,12 +700,14 @@ Full list here: ${FACTS.admissionsUrl}`,
     ],
     answer: `Mujhe Zaryab Malik ne banaya hai — woh khud LGU mein BS Computational Mathematics & AI (CMAI) ke 2nd semester ke student hain.
 
-Contact: 0317 1704869
-Instagram: https://www.instagram.com/capt_zaryab_malik`,
+Instagram: https://www.instagram.com/capt_zaryab_malik
+
+Admission se related sawal ke liye: ${FACTS.admissionOffice}`,
     answerEn: `I was built by Zaryab Malik — he's a 2nd semester BS Computational Mathematics & AI (CMAI) student at LGU.
 
-Contact: 0317 1704869
-Instagram: https://www.instagram.com/capt_zaryab_malik`,
+Instagram: https://www.instagram.com/capt_zaryab_malik
+
+For admission-related queries: ${FACTS.admissionOffice}`,
     sources: [],
     skipRetrieval: true,
   },
