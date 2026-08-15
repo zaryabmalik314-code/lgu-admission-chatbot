@@ -39,6 +39,17 @@ export function detectLanguage(text) {
   return ROMAN_URDU_MARKERS.test(text) ? 'roman-ur' : 'en';
 }
 
+export function detectLangSwitch(text) {
+  const q = text.toLowerCase();
+  if (/\b(talk|speak|reply|respond|answer|write)\b.*\b(in\s+)?(english)\b/.test(q)) return 'en';
+  if (/\b(english)\s*(mein|me|main|mai)\s*(baat|bolo|jawab|likho|karo)/.test(q)) return 'en';
+  if (/\b(switch|change)\s*(to\s*)?(english)\b/.test(q)) return 'en';
+  if (/\b(talk|speak|reply|respond|answer|write)\b.*\b(in\s+)?(urdu)\b/.test(q)) return 'ur';
+  if (/\b(urdu)\s*(mein|me|main|mai)\s*(baat|bolo|jawab|likho|karo)/.test(q)) return 'ur';
+  if (/\b(switch|change)\s*(to\s*)?(urdu)\b/.test(q)) return 'ur';
+  return null;
+}
+
 // A program name in the question means program-specific numbers are wanted.
 // The abbreviation group is the program CODES students type — including the
 // specific ones the site uses (cmai, dfcs, wcci, bch) that don't start with a

@@ -519,6 +519,7 @@
 
   const history = [];
   let busy = false;
+  let convLang = null;
 
   function md(src) {
     const esc = src
@@ -576,6 +577,25 @@
     return el.querySelector('.b');
   }
 
+  const CHIP_UR = {
+    'Scholarships': 'اسکالرشپس',
+    'How to apply': 'اپلائی کیسے کریں؟',
+    'Required documents': 'ضروری دستاویزات',
+    'Fee structure': 'فیس سٹرکچر',
+    'Entry test dates': 'انٹری ٹیسٹ کی تاریخیں',
+    'Admission criteria': 'داخلے کی شرائط',
+    'Programs offered': 'پیش کردہ پروگرامز',
+  };
+  function translateChip(text) {
+    if (lang !== 'ur') return text;
+    if (CHIP_UR[text]) return CHIP_UR[text];
+    const m = text.match(/^(\S+)\s+criteria$/i);
+    if (m) return `${m[1]} شرائط`;
+    const m2 = text.match(/^(\S+)\s+fee$/i);
+    if (m2) return `${m2[1]} فیس`;
+    return text;
+  }
+
   function showChips(items, cls) {
     const el = document.createElement('div');
     el.className = 'chips' + (cls ? ' ' + cls : '');
@@ -583,10 +603,10 @@
       const c = document.createElement('button');
       c.className = 'chip';
       c.type = 'button';
-      c.textContent = s;
+      c.textContent = translateChip(s);
       c.addEventListener('click', () => {
         root.querySelectorAll('.chips').forEach((ch) => ch.remove());
-        ask(s);
+        ask(translateChip(s));
       });
       el.appendChild(c);
     }
@@ -642,7 +662,7 @@
       const res = await fetch(`${API}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-lgu-session': sessionId },
-        body: JSON.stringify({ message: question, history: history.slice(-6) }),
+        body: JSON.stringify({ message: question, history: history.slice(-6), lang: convLang }),
       });
 
       if (res.status === 429) {
@@ -683,6 +703,7 @@
           if (evLine[1] === 'meta') {
             currentTier = payload.tier;
             currentIntent = payload.intent || '';
+            if (payload.setLang) convLang = payload.setLang;
           } else if (evLine[1] === 'delta') {
             if (currentTier === 'faq' || currentTier === 'cache') {
               pendingDeltas.push(payload.text);

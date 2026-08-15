@@ -12,7 +12,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { search, loadIndex } from './retrieve.mjs';
-import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS, mentionsProgram, PROGRAM_PATTERN } from './faq.mjs';
+import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS, mentionsProgram, PROGRAM_PATTERN, detectLangSwitch } from './faq.mjs';
 import { checkRateLimit, rateLimitStats } from './ratelimit.mjs';
 import { answerStream, isConfigured, describeProvider, ALL_PROVIDERS_FAILED_FALLBACK } from './llm.mjs';
 import { getCached, setCached, cacheStats } from './cache.mjs';
@@ -121,6 +121,9 @@ function sse(res) {
 app.post('/api/chat', async (req, res) => {
   const question = String(req.body?.message || '').slice(0, 2000).trim();
   const history = Array.isArray(req.body?.history) ? req.body.history : [];
+  const clientLang = req.body?.lang || null;
+  const switchLang = detectLangSwitch(question);
+  const effectiveLang = switchLang || clientLang;
 
   if (!question) {
     return res.status(400).json({ error: 'message is required' });
@@ -214,7 +217,9 @@ app.post('/api/chat', async (req, res) => {
 
     const tier = faq ? 'hybrid' : 'rag';
     trackQuestion(question, tier, faq?.id);
-    stream.send('meta', { tier, intent: faq?.id, sources: cited.map((c) => c.url) });
+    const meta = { tier, intent: faq?.id, sources: cited.map((c) => c.url) };
+    if (switchLang) meta.setLang = switchLang;
+    stream.send('meta', meta);
 
     const fullAnswer = await answerStream({
       question,
@@ -223,6 +228,7 @@ app.post('/api/chat', async (req, res) => {
       faqHint: faq?.answer,
       prefer: faq ? 'groq' : 'gemini',
       maxTokens: faq ? 400 : 1200,
+      lang: effectiveLang,
       onDelta: (text) => {
         if (!closed) {
           streamedAny = true;

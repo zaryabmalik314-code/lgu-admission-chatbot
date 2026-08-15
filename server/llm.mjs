@@ -111,8 +111,12 @@ const LANGUAGE_DIRECTIVE = {
  * Roman Urdu. Detecting the language here and naming it in the turn turns a
  * judgement call into an instruction.
  */
-function buildUserTurn(question, context) {
-  const lang = LANGUAGE_DIRECTIVE[detectLanguage(question)];
+function buildUserTurn(question, context, forcedLang) {
+  let langKey;
+  if (forcedLang === 'en') langKey = 'en';
+  else if (forcedLang === 'ur') langKey = detectLanguage(question) === 'ur' ? 'ur' : 'roman-ur';
+  else langKey = detectLanguage(question);
+  const lang = LANGUAGE_DIRECTIVE[langKey];
   return (
     `CONTEXT FROM lgu.edu.pk:\n\n${context}\n\n---\n\n` +
     `STUDENT'S QUESTION: ${question}\n\n` +
@@ -127,7 +131,7 @@ const recent = (history) => history.slice(-6).map((m) => ({ role: m.role, conten
 /* ------------------------------- Groq -------------------------------- */
 
 let groqClient;
-async function streamGroq({ question, history, context, onDelta, maxTokens }) {
+async function streamGroq({ question, history, context, onDelta, maxTokens, lang }) {
   if (!groqClient) {
     const { default: Groq } = await import('groq-sdk');
     groqClient = new Groq(); // reads GROQ_API_KEY
@@ -141,7 +145,7 @@ async function streamGroq({ question, history, context, onDelta, maxTokens }) {
     messages: [
       { role: 'system', content: SYSTEM },
       ...recent(history),
-      { role: 'user', content: buildUserTurn(question, context) },
+      { role: 'user', content: buildUserTurn(question, context, lang) },
     ],
   });
 
@@ -158,7 +162,7 @@ async function streamGroq({ question, history, context, onDelta, maxTokens }) {
 /* ------------------------------- Gemini ------------------------------ */
 
 let geminiClient;
-async function streamGemini({ question, history, context, onDelta, maxTokens }) {
+async function streamGemini({ question, history, context, onDelta, maxTokens, lang }) {
   if (!geminiClient) {
     const { GoogleGenAI } = await import('@google/genai');
     geminiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -169,7 +173,7 @@ async function streamGemini({ question, history, context, onDelta, maxTokens }) 
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }],
     })),
-    { role: 'user', parts: [{ text: buildUserTurn(question, context) }] },
+    { role: 'user', parts: [{ text: buildUserTurn(question, context, lang) }] },
   ];
 
   const stream = await geminiClient.models.generateContentStream({
@@ -207,7 +211,7 @@ function claudeTuning(model) {
     : {};
 }
 
-async function streamAnthropic({ question, history, context, onDelta, maxTokens }) {
+async function streamAnthropic({ question, history, context, onDelta, maxTokens, lang }) {
   if (!anthropicClient) {
     const { default: Anthropic } = await import('@anthropic-ai/sdk');
     anthropicClient = new Anthropic(); // reads ANTHROPIC_API_KEY
@@ -220,7 +224,7 @@ async function streamAnthropic({ question, history, context, onDelta, maxTokens 
     ...claudeTuning(CLAUDE_MODEL),
     messages: [
       ...recent(history),
-      { role: 'user', content: buildUserTurn(question, context) },
+      { role: 'user', content: buildUserTurn(question, context, lang) },
     ],
   });
 
@@ -251,7 +255,7 @@ async function streamAnthropic({ question, history, context, onDelta, maxTokens 
  */
 const STREAM_FN = { groq: streamGroq, gemini: streamGemini, anthropic: streamAnthropic };
 
-export async function answerStream({ question, history = [], chunks, faqHint, onDelta, prefer, maxTokens = 1200 }) {
+export async function answerStream({ question, history = [], chunks, faqHint, onDelta, prefer, maxTokens = 1200, lang }) {
   const context = buildContext(chunks, faqHint);
 
   const providers = configuredProviders();
@@ -268,6 +272,7 @@ export async function answerStream({ question, history = [], chunks, faqHint, on
         history,
         context,
         maxTokens,
+        lang,
         onDelta: (delta) => { started = true; onDelta(delta); },
       });
     } catch (err) {
