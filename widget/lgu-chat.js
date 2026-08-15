@@ -374,13 +374,18 @@
 
       /* Dark-mode toggle */
       .dm-toggle {
-        background: rgba(255,255,255,.12); border: 0; color: #fff;
-        width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
-        display: grid; place-items: center; font-size: 14px;
-        transition: background .2s, transform .2s;
-        position: relative; flex-shrink: 0;
+        background: rgba(255,255,255,.1); border: 0; color: #fff;
+        width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+        display: grid; place-items: center;
+        transition: background .25s, transform .25s;
+        position: relative; flex-shrink: 0; overflow: hidden;
       }
-      .dm-toggle:hover { background: rgba(255,255,255,.22); transform: scale(1.1); }
+      .dm-toggle:hover { background: rgba(255,255,255,.2); transform: scale(1.08); }
+      .dm-toggle:active { transform: scale(.92); }
+      .dm-toggle svg { width: 16px; height: 16px; transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .25s; }
+      .dm-toggle .ico-sun { position: absolute; opacity: 0; transform: rotate(90deg) scale(.5); }
+      .wrap.dark .dm-toggle .ico-moon { opacity: 0; transform: rotate(-90deg) scale(.5); }
+      .wrap.dark .dm-toggle .ico-sun { opacity: 1; transform: rotate(0) scale(1); }
 
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
@@ -400,7 +405,10 @@
             <div class="t">${TITLE}</div>
             <div class="s"><span class="live"></span>Online</div>
           </div>
-          <button class="dm-toggle" aria-label="Toggle dark mode">🌙</button>
+          <button class="dm-toggle" aria-label="Toggle dark mode">
+            <svg class="ico-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+            <svg class="ico-sun" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0-5a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm0 18a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm9-9a1 1 0 0 1 0 2h-1a1 1 0 1 1 0-2h1zM4 11a1 1 0 0 1 0 2H3a1 1 0 1 1 0-2h1zm14.36-5.95a1 1 0 0 1 0 1.41l-.7.71a1 1 0 0 1-1.42-1.42l.71-.7a1 1 0 0 1 1.41 0zM7.05 17.66a1 1 0 0 1 0 1.41l-.7.71a1 1 0 1 1-1.42-1.42l.71-.7a1 1 0 0 1 1.41 0zm11.9 0a1 1 0 0 1-1.41 0l-.71-.7a1 1 0 0 1 1.42-1.42l.7.71a1 1 0 0 1 0 1.41zM7.05 6.34a1 1 0 0 1-1.41 0l-.71-.7a1 1 0 0 1 1.42-1.42l.7.71a1 1 0 0 1 0 1.41z"/></svg>
+          </button>
           <button class="close" aria-label="Close">&times;</button>
         </header>
         <div class="log"></div>
@@ -436,7 +444,6 @@
   const DM_KEY = 'lgu-chat-dark';
   function applyDark(on) {
     wrap.classList.toggle('dark', on);
-    dmBtn.textContent = on ? '☀️' : '🌙';
     try { localStorage.setItem(DM_KEY, on ? '1' : '0'); } catch {}
   }
   let darkPref;
