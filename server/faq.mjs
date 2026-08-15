@@ -506,6 +506,34 @@ Each department also holds its own admission test — guidelines: ${FACTS.testUr
     skipRetrieval: true,
   },
   {
+    id: 'supply-supplementary',
+    any: [/\bsuppl(y|ementary)\b/, /\bcompartment\b/, /part\s*1\s*(result|marks)/, /\b(fail|ruk|pending)\b.*\b(subject|paper)\b/, /\bprovisional\b.*\b(admiss|dakhla)\b/],
+    answer: `Haan, aap apply kar sakte hain! LGU provisional admission deta hai 1st year (Part 1) ke result ki buniyad par, jab tak Part 2 ka result nahi aa jata.
+
+Lekin yaad rakhein:
+- Part 2 ka complete result aane ke baad submit karna zaroori hai
+- Final eligibility 50% marks par check hogi (Part 1 + Part 2 dono mila kar)
+- Agar 50% se kam aaye to admission cancel ho jayega
+
+Toh agar aapke Part 1 mein pass hain aur Part 2 pending hai ya supply hai, apply kar dein — seat secure ho jayegi provisionally.
+
+Apply: ${FACTS.applyUrl}
+Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
+    answerEn: `Yes, you can apply! LGU offers provisional admission based on your Part 1 (1st year) Intermediate results while you await Part 2 results.
+
+Key conditions:
+- You must submit your complete result once Part 2 results are declared
+- Final eligibility requires minimum 50% marks overall (Part 1 + Part 2 combined)
+- If you fall below 50%, the admission will be cancelled
+
+So if you have a supply/supplementary in Part 2, go ahead and apply — your seat is secured provisionally until your complete result comes in.
+
+Apply: ${FACTS.applyUrl}
+Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
+    sources: [FACTS.applyUrl],
+    skipRetrieval: true,
+  },
+  {
     id: 'contact',
     any: [/contact|rabta/, /phone|number|call/, /email/, /address|pata|kahan hai|location/, /campus kahan/],
     answer: `Lahore Garrison University
