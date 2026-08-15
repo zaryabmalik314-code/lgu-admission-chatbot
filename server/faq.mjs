@@ -189,10 +189,10 @@ function buildAdvisingAnswer(query, lang, history = []) {
   return en
     ? `${marksLine}With ${article} ${stream.label} background, these LGU programs fit best:\n\n${list}\n\n${
         also ? `You'd also qualify for ${also}. ` : ''
-      }Each has its own admission test. Apply: ${FACTS.applyUrl}`
+      }Each has its own admission test. Confirm which of these are open this intake under "Programs Offered and Admission Schedule" before applying. Apply: ${FACTS.applyUrl}`
     : `${marksLine}${stream.label} background ke saath, aap ke liye ye LGU programs sab se munasib hain:\n\n${list}\n\n${
         also ? `Aap ${also} ke liye bhi eligible hain. ` : ''
-      }Har ek ka apna admission test hota hai. Apply: ${FACTS.applyUrl}`;
+      }Har ek ka apna admission test hota hai. Apply karne se pehle "Programs Offered and Admission Schedule" mein confirm kar lein ke ye is intake mein open hain. Apply: ${FACTS.applyUrl}`;
 }
 
 /**
@@ -258,9 +258,15 @@ function buildLevelInfoAnswer(query, lang) {
   if (!level) return null;
 
   const list = level.programs.map((p) => `- ${p}`).join('\n');
+  // This is LGU's full catalog for the level, not this intake's open list —
+  // a handful of these programs (e.g. BS Urdu, BS Physics) don't run every
+  // admission cycle. Without this line students read the catalog as "open now".
+  const caveat = en
+    ? "Not every program takes new admissions every intake — check \"Programs Offered and Admission Schedule\" on the portal for what's open right now."
+    : 'Har program har intake mein open nahi hota — abhi kya open hai yeh portal par "Programs Offered and Admission Schedule" mein dekh lein.';
   return en
-    ? `**${level.label.en} at LGU** — ${level.duration.en}. Eligibility: ${level.eligibility.en}.\n\n${list}\n\nFull list: ${FACTS.admissionsUrl}\nApply: ${FACTS.applyUrl}`
-    : `**${level.label.ur} LGU mein** — ${level.duration.ur}. Eligibility: ${level.eligibility.ur}.\n\n${list}\n\nPoori list: ${FACTS.admissionsUrl}\nApply: ${FACTS.applyUrl}`;
+    ? `**${level.label.en} at LGU** — ${level.duration.en}. Eligibility: ${level.eligibility.en}.\n\n${list}\n\n${caveat}\n\nFull list: ${FACTS.admissionsUrl}\nApply: ${FACTS.applyUrl}`
+    : `**${level.label.ur} LGU mein** — ${level.duration.ur}. Eligibility: ${level.eligibility.ur}.\n\n${list}\n\n${caveat}\n\nPoori list: ${FACTS.admissionsUrl}\nApply: ${FACTS.applyUrl}`;
 }
 
 /**
