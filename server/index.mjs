@@ -38,7 +38,7 @@ function fallbackAnswer(faq, cited) {
         .join('\n')
     );
   }
-  return `Is ka jawab mere paas nahi hai. Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`;
+  return `Is ka jawab mere paas nahi hai. Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile} · ${FACTS.email}`;
 }
 
 const app = express();
@@ -111,7 +111,7 @@ app.post('/api/chat', async (req, res) => {
   if (!limit.allowed) {
     const msg =
       limit.scope === 'global'
-        ? `Abhi bohot zyada sawal aa rahe hain. Thodi der baad koshish karein, ya Admission Office se rabta karein: ${FACTS.admissionOffice}`
+        ? `Abhi bohot zyada sawal aa rahe hain. Thodi der baad koshish karein, ya Admission Office se rabta karein: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`
         : `Aap ne bohot tezi se kai sawal poochh liye. Thodi der ruk kar dobara koshish karein.`;
     res.set('Retry-After', String(limit.retryAfter));
     return res.status(429).json({ error: 'rate_limited', scope: limit.scope, message: msg });
@@ -224,7 +224,7 @@ app.post('/api/chat', async (req, res) => {
       stream.send('done', { sources: cited.slice(0, 3).map((c) => c.url) });
     } else {
       stream.send('error', {
-        message: `Maazrat, abhi jawab mukammal nahi ho saka. Admission Office: ${FACTS.admissionOffice}`,
+        message: `Maazrat, abhi jawab mukammal nahi ho saka. Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
       });
     }
     stream.end();

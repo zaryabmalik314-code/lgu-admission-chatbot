@@ -13,6 +13,7 @@
 export const FACTS = {
   phone: '042-37181821-22',
   admissionOffice: '042-37181823',
+  admissionMobile: '0317-1704869',
   email: 'admissions@lgu.edu.pk',
   address: 'Main Campus, Sector C, DHA Phase 6, Lahore',
   applyUrl: 'https://admissions.lgu.edu.pk/',
@@ -332,7 +333,7 @@ Steps:
 3. Academic record aur documents upload karein
 4. Form submit kar ke admission test / interview ka intezar karein
 
-Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`,
+Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile} · ${FACTS.email}`,
     answerEn: `Applications are submitted through LGU's online admission portal: ${FACTS.applyUrl}
 
 Steps:
@@ -341,7 +342,7 @@ Steps:
 3. Upload your academic record and documents
 4. Submit the form and wait for the admission test / interview
 
-Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`,
+Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile} · ${FACTS.email}`,
     sources: [FACTS.applyUrl, FACTS.admissionsUrl],
   },
   {
@@ -430,6 +431,7 @@ Each department also holds its own admission test — guidelines: ${FACTS.testUr
     // the question.
     id: 'scholarship',
     any: [/scholar|scholership/, /wazifa|wazaif/, /financial (aid|assistance)/, /fee (concession|discount)/, /need based/],
+    unless: (q) => /\b(merit\s*based|performance\s*based|defence\s*based|sports?\s*based|garrisonian|kinship|employees?\s*scholar|need\s*based\s*scholar)\b/i.test(q),
     answerFn: (query, lang) => {
       const en = lang === 'en';
       const marks = parseMarks(query);
@@ -457,8 +459,8 @@ Each department also holds its own admission test — guidelines: ${FACTS.testUr
 - Category VII — Need Based Scholarship`;
 
       return en
-        ? `${marksLine}LGU offers seven categories of financial assistance, and they apply across all programs including CMAI:\n\n${list}\n\nContact the Admission Office for exact eligibility and how to apply: ${FACTS.admissionOffice}`
-        : `${marksLine}LGU par 7 tarah ki financial assistance available hai, aur ye har program (CMAI samet) par apply hoti hai:\n\n${list}\n\nExact eligibility aur apply karne ke liye Admission Office se rabta karein: ${FACTS.admissionOffice}`;
+        ? `${marksLine}LGU offers seven categories of financial assistance, and they apply across all programs including CMAI:\n\n${list}\n\nContact the Admission Office for exact eligibility and how to apply: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`
+        : `${marksLine}LGU par 7 tarah ki financial assistance available hai, aur ye har program (CMAI samet) par apply hoti hai:\n\n${list}\n\nExact eligibility aur apply karne ke liye Admission Office se rabta karein: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`;
     },
     sources: [FACTS.scholarshipUrl],
     // The category list is the same regardless of which program is named, so a
@@ -473,13 +475,13 @@ Each department also holds its own admission test — guidelines: ${FACTS.testUr
 
 - Address: ${FACTS.address}
 - Phone: ${FACTS.phone}
-- Admission Office: ${FACTS.admissionOffice}
+- Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}
 - Email: ${FACTS.email}`,
     answerEn: `Lahore Garrison University
 
 - Address: ${FACTS.address}
 - Phone: ${FACTS.phone}
-- Admission Office: ${FACTS.admissionOffice}
+- Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}
 - Email: ${FACTS.email}`,
     sources: ['https://lgu.edu.pk/contact/'],
     // These facts never vary by program, so a query like "CMAI number" must not
@@ -727,12 +729,12 @@ Full list here: ${FACTS.admissionsUrl}`,
 
 Instagram: https://www.instagram.com/capt_zaryab_malik
 
-Admission se related sawal ke liye: ${FACTS.admissionOffice}`,
+Admission se related sawal ke liye: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
     answerEn: `I was built by Zaryab Malik — he's a 2nd semester BS Computational Mathematics & AI (CMAI) student at LGU.
 
 Instagram: https://www.instagram.com/capt_zaryab_malik
 
-For admission-related queries: ${FACTS.admissionOffice}`,
+For admission-related queries: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
     sources: [],
     skipRetrieval: true,
   },
