@@ -532,43 +532,71 @@ Apply: ${FACTS.applyUrl}`,
       /(scope|career|job|future|salary|demand|placement).*(cmai|computational math)/,
       /computational math.*(scope|career|job|future)/,
     ],
-    answer: `BS Computational Mathematics & AI (CMAI) HEC-recognized degree hai aur iska scope bohat acha hai:
+    answer: `**BS Computational Mathematics & AI (CMAI)** — LGU Department of Mathematics, HEC-recognized, 4 saal / 135 credit hours.
 
-**Career paths:**
-- AI / Machine Learning Engineer
-- Data Scientist / Data Analyst
-- Quantitative Analyst (finance)
-- Research Scientist (academia / R&D)
-- Cryptography & Cyber Security Specialist
-- Software Engineer (AI-focused companies)
+Jo cheez CMAI ko generic BS AI se alag karti hai wahi iska scope banati hai: AI ke saath applied mathematics ki strong grounding — jo aaj ke ML/AI research aur high-end engineering roles ki asli requirement hai.
 
-**Kyun choose karein:**
-- Math + AI ka combination globally high-demand hai
-- Finance, healthcare, tech — har industry mein roles hain
-- MS/PhD ke liye strong foundation — applied math + AI dono cover hote hain
-- Pakistan mein AI industry grow ho rahi hai, early graduates ko advantage milega
+**Curriculum ki key features (LGU roadmap se):**
+- **Mathematical foundation** — Linear Algebra, Calculus, Discrete Math, Applied Probability & Statistics, ODE, PDE
+- **AI core** — Machine Learning, Artificial Neural Networks & Deep Learning, Programming for AI, Fuzzy Logic
+- **Computational skills** — Numerical Computing, Optimization Theory, Analysis of Algorithms, Computational Graph Theory
+- **CS core** — Programming Fundamentals, OOP (C++), Python, Data Structures & Algorithms, Databases
+- **Industry-relevant** — Cryptography, SAP Data Intelligence, Capstone Project
+- **8th semester** internship + final year project
 
-Apply: ${FACTS.applyUrl}
-Fee structure: ${FACTS.feeUrl}`,
-    answerEn: `BS Computational Mathematics & AI (CMAI) is an HEC-recognized degree with strong career prospects:
+**Career paths (curriculum ke saath directly aligned):**
+- Machine Learning / AI Engineer — DL + Python + math foundation
+- Data Scientist — stats, probability, optimization, ML sab covered
+- Quantitative Analyst / Quant Developer (fintech, algorithmic trading) — yahi stack
+- Research Scientist / R&D — CMAI ka math depth pure BS AI se aage jaata hai
+- Cryptography & Cyber Security Engineer — dedicated course + strong math base
+- Operations Research / Optimization roles (logistics, supply chain, energy)
+- AI Product Engineer, Computer Vision / NLP Engineer (specialize via electives + MS)
 
-**Career paths:**
-- AI / Machine Learning Engineer
-- Data Scientist / Data Analyst
-- Quantitative Analyst (finance)
-- Research Scientist (academia / R&D)
-- Cryptography & Cyber Security Specialist
-- Software Engineer (AI-focused companies)
-
-**Why choose CMAI:**
-- Math + AI combination is in high demand globally
-- Roles across finance, healthcare, tech, and more
-- Strong foundation for MS/PhD — covers applied math and AI
-- Pakistan's AI industry is growing — early graduates have an edge
+**Future scope:**
+- **Higher studies** — CMAI graduates MS AI / MS DS / MS CS / M.Phil Mathematics ke liye eligible hain; mathematical depth PhD tak strongly compete karne mein help karti hai
+- **Global demand** — ML/AI aur quantitative roles worldwide fastest-growing hain; jo generic AI se aage kaam karta hai (research, optimization, DL theory) uska ceiling higher hota hai
+- **Emerging fields** — Generative AI, LLMs, computer vision, drug discovery, climate modeling — sab ki foundation exactly yahi math + ML combination hai
+- **Pakistan mein** — banking, telecom, fintech aur AI startups quantitative talent hire kar rahe hain; early-cycle CMAI graduates ke liye clear opening hai
 
 Apply: ${FACTS.applyUrl}
-Fee structure: ${FACTS.feeUrl}`,
+Fee structure: ${FACTS.feeUrl}
+Full roadmap: https://lgu.edu.pk/bs-mathematics-in-computational-mathematics-and-artificial-intelligence/`,
+    answerEn: `**BS Computational Mathematics & AI (CMAI)** — LGU Department of Mathematics, HEC-recognized, 4 years / 135 credit hours.
+
+What sets CMAI apart from a generic BS AI is the same thing that gives it its scope: AI paired with a strong applied-mathematics grounding — exactly what today's ML/AI research and high-end engineering roles actually need.
+
+**Key curriculum features (from LGU's roadmap):**
+- **Mathematical foundation** — Linear Algebra, Calculus, Discrete Math, Applied Probability & Statistics, ODEs, PDEs
+- **AI core** — Machine Learning, Artificial Neural Networks & Deep Learning, Programming for AI, Fuzzy Logic
+- **Computational skills** — Numerical Computing, Optimization Theory, Analysis of Algorithms, Computational Graph Theory
+- **CS core** — Programming Fundamentals, OOP (C++), Python, Data Structures & Algorithms, Databases
+- **Industry-relevant** — Cryptography, SAP Data Intelligence, Capstone Project
+- 8th-semester internship + final-year project
+
+**Career paths (aligned directly with the curriculum):**
+- Machine Learning / AI Engineer — DL + Python + math foundation
+- Data Scientist — statistics, probability, optimization, and ML all covered
+- Quantitative Analyst / Quant Developer (fintech, algorithmic trading) — this is the exact stack
+- Research Scientist / R&D — CMAI's math depth goes beyond a pure BS AI
+- Cryptography & Cyber Security Engineer — dedicated course + strong math base
+- Operations Research / Optimization roles (logistics, supply chain, energy)
+- AI Product Engineer, Computer Vision / NLP Engineer (specialize via electives + MS)
+
+**Future scope:**
+- **Higher studies** — CMAI graduates are eligible for MS AI / MS DS / MS CS / M.Phil Mathematics; the mathematical depth also helps compete strongly through PhD
+- **Global demand** — ML/AI and quantitative roles are among the fastest-growing worldwide; work that goes beyond generic AI (research, optimization, DL theory) has a higher ceiling
+- **Emerging fields** — Generative AI, LLMs, computer vision, drug discovery, climate modeling — the foundation is precisely this math + ML combination
+- **In Pakistan** — banking, telecom, fintech, and AI startups are actively hiring quantitative talent; early-cycle CMAI graduates have a clear opening
+
+Apply: ${FACTS.applyUrl}
+Fee structure: ${FACTS.feeUrl}
+Full roadmap: https://lgu.edu.pk/bs-mathematics-in-computational-mathematics-and-artificial-intelligence/`,
     sources: ['https://lgu.edu.pk/bs-mathematics-in-computational-mathematics-and-artificial-intelligence/', FACTS.applyUrl],
+    // Question mentions CMAI (a program) which normally routes to the LLM tier
+    // via mentionsProgram(); without this the polished scope answer would be
+    // replaced by an LLM summary of retrieved chunks.
+    skipRetrieval: true,
   },
   {
     // General "what is CMAI" / "tell me about CMAI" — placed after cmai-scope
