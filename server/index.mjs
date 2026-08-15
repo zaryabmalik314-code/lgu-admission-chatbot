@@ -203,6 +203,7 @@ app.post('/api/chat', async (req, res) => {
       history,
       chunks,
       faqHint: faq?.answer,
+      prefer: faq ? 'groq' : 'gemini',
       onDelta: (text) => {
         if (!closed) {
           streamedAny = true;

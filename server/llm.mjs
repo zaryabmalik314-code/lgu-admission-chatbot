@@ -255,10 +255,16 @@ async function streamAnthropic({ question, history, context, onDelta }) {
  */
 const STREAM_FN = { groq: streamGroq, gemini: streamGemini, anthropic: streamAnthropic };
 
-export async function answerStream({ question, history = [], chunks, faqHint, onDelta }) {
+export async function answerStream({ question, history = [], chunks, faqHint, onDelta, prefer }) {
   const context = buildContext(chunks, faqHint);
 
-  for (const provider of configuredProviders()) {
+  const providers = configuredProviders();
+  if (prefer && providers.includes(prefer)) {
+    providers.splice(providers.indexOf(prefer), 1);
+    providers.unshift(prefer);
+  }
+
+  for (const provider of providers) {
     // Only fall through to the next provider if nothing was streamed yet —
     // once a partial answer has reached the student, retrying would either
     // duplicate it or restart mid-sentence, both worse than stopping.
