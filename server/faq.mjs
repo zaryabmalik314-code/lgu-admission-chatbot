@@ -56,6 +56,11 @@ export function mentionsProgram(query) {
 const FIELD_PATTERN =
   /\b(bio(logy)?|computers?|computing|programming|coding|softwares?|business|commerce|finance|account(ing|s)?|management|math(s|ematics)?|physics|chemistry|psychology|english|urdu|media|journalism|communication|criminology|forensics?|economics|islamic|zoology|botany|nutrition|dietetics|artificial intelligence|data science|cyber ?security|electronics)\b/i;
 
+// A marks statement ("i got 85%") also matches eligibility-advising's marks
+// regexes, which would otherwise hijack a question that's really about
+// scholarships ("85% ICS, scholarship milega?") and answer the wrong thing.
+const SCHOLARSHIP_PATTERN = /scholar|scholership|wazifa|wazaif|financial (aid|assistance)|fee (concession|discount)|need based/i;
+
 
 /**
  * Intermediate streams mapped to the LGU BS programs that fit them. This is a
@@ -352,7 +357,7 @@ Admission Office: ${FACTS.admissionOffice} · ${FACTS.email}`,
     // interest question — they want the programs in that field, not the generic
     // criteria table — so it's suppressed and retrieval lists real programs.
     // With marks present, eligibility is the priority and the table wins.
-    unless: (q) => FIELD_PATTERN.test(q) && parseMarks(q) == null,
+    unless: (q) => (FIELD_PATTERN.test(q) && parseMarks(q) == null) || SCHOLARSHIP_PATTERN.test(q),
     any: [
       /which (degree|program|course|field)/,
       /what (degree|program|course).*(can|should) i/,
@@ -415,31 +420,47 @@ Each department also holds its own admission test — guidelines: ${FACTS.testUr
     sources: [FACTS.criteriaUrl, FACTS.testUrl],
   },
   {
+    // Students often fold marks into the scholarship question itself ("85% ICS,
+    // scholarship milega in CMAI?"), so the answer opens with a line about their
+    // marks before the category list — otherwise it reads like it ignored half
+    // the question.
     id: 'scholarship',
     any: [/scholar|scholership/, /wazifa|wazaif/, /financial (aid|assistance)/, /fee (concession|discount)/, /need based/],
-    answer: `LGU par 7 tarah ki financial assistance available hai:
+    answerFn: (query, lang) => {
+      const en = lang === 'en';
+      const marks = parseMarks(query);
+      const marksLine =
+        marks == null
+          ? ''
+          : marks >= 80
+          ? en
+            ? `With ${marks}% you're in strong range for Category I (Merit Based) — final award still depends on that intake's merit list. `
+            : `${marks}% ke saath aap Category I (Merit Based) ke liye strong range mein hain — final award us intake ki merit list par depend karta hai. `
+          : marks >= 60
+          ? en
+            ? `${marks}% gives you a reasonable shot at merit-based scholarships, though the cutoff moves each intake depending on the merit list. `
+            : `${marks}% ke saath merit-based scholarship ka reasonable chance hai, lekin cutoff har intake ki merit list ke hisaab se badalta hai. `
+          : en
+          ? `${marks}% is below where merit-based awards usually land — Need Based or Defence/Kinship categories may fit better depending on your situation. `
+          : `${marks}% merit-based awards ke usual range se kam hai — aap ki situation ke hisaab se Need Based ya Defence/Kinship category zyada munasib ho sakti hai. `;
 
-- Category I — Merit Based Scholarship
+      const list = `- Category I — Merit Based Scholarship
 - Category II — Performance Based Award
 - Category III — Defence Based Subsidy
 - Category IV — Garrisonian & Kinship Based Scholarship
 - Category V — LGU Employees Scholarship
 - Category VI — Sports Based Scholarship
-- Category VII — Need Based Scholarship
+- Category VII — Need Based Scholarship`;
 
-Eligibility aur application ke liye Admission Office se rabta karein: ${FACTS.admissionOffice}`,
-    answerEn: `LGU offers seven categories of financial assistance:
-
-- Category I — Merit Based Scholarship
-- Category II — Performance Based Award
-- Category III — Defence Based Subsidy
-- Category IV — Garrisonian & Kinship Based Scholarship
-- Category V — LGU Employees Scholarship
-- Category VI — Sports Based Scholarship
-- Category VII — Need Based Scholarship
-
-Contact the Admission Office for eligibility and how to apply: ${FACTS.admissionOffice}`,
+      return en
+        ? `${marksLine}LGU offers seven categories of financial assistance, and they apply across all programs including CMAI:\n\n${list}\n\nContact the Admission Office for exact eligibility and how to apply: ${FACTS.admissionOffice}`
+        : `${marksLine}LGU par 7 tarah ki financial assistance available hai, aur ye har program (CMAI samet) par apply hoti hai:\n\n${list}\n\nExact eligibility aur apply karne ke liye Admission Office se rabta karein: ${FACTS.admissionOffice}`;
+    },
     sources: [FACTS.scholarshipUrl],
+    // The category list is the same regardless of which program is named, so a
+    // program mention shouldn't push this to the LLM tier the way it does for
+    // program-specific questions (fees, roadmap). Serve instantly.
+    skipRetrieval: true,
   },
   {
     id: 'contact',
