@@ -429,9 +429,46 @@ Each department also holds its own admission test — guidelines: ${FACTS.testUr
     // scholarship milega in CMAI?"), so the answer opens with a line about their
     // marks before the category list — otherwise it reads like it ignored half
     // the question.
+    id: 'merit-scholarship',
+    any: [/merit\s*based/i],
+    all: [/scholar|scholership|wazifa|wazaif/],
+    answerFn: (query, lang) => {
+      const en = lang === 'en';
+      const marks = parseMarks(query);
+
+      const table = `| % of Marks (Intermediate) | Tuition Fee Exemption | Continuation Criteria |
+|---|---|---|
+| 80% to 84.99% | 25% | SGPA 3.5 & Above |
+| 85% to 99% | 50% | SGPA 3.5 & Above |
+| Position Holder (Board) | 100% | SGPA 3.5 & Above |
+
+| Grades (A-Level) | Tuition Fee Exemption | Continuation Criteria |
+|---|---|---|
+| Straight A* | 100% | SGPA 3.5 & Above |
+| At least two A* (no less than A in others) | 50% | SGPA 3.5 & Above |`;
+
+      const marksLine =
+        marks == null ? ''
+        : marks >= 85 ? (en
+            ? `With ${marks}% you qualify for 50% tuition fee exemption! `
+            : `${marks}% ke saath aapko 50% tuition fee exemption milegi! `)
+        : marks >= 80 ? (en
+            ? `With ${marks}% you qualify for 25% tuition fee exemption. `
+            : `${marks}% ke saath aapko 25% tuition fee exemption milegi. `)
+        : (en
+            ? `${marks}% is below the 80% threshold for merit-based tuition exemption. Check Need Based or other categories. `
+            : `${marks}% merit-based tuition exemption ke 80% threshold se neeche hai. Need Based ya doosri categories dekhein. `);
+
+      return en
+        ? `${marksLine}LGU's Merit Based Scholarship (Category I) offers tuition fee exemption based on your intermediate/A-Level marks:\n\n${table}\n\nYou must maintain SGPA 3.5 or above each semester to keep the scholarship.\n\nAdmission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`
+        : `${marksLine}LGU ka Merit Based Scholarship (Category I) aapke intermediate/A-Level marks ke hisaab se tuition fee exemption deta hai:\n\n${table}\n\nScholarship barqarar rakhne ke liye har semester SGPA 3.5 ya usse zyada chahiye.\n\nAdmission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`;
+    },
+    sources: [FACTS.scholarshipUrl],
+    skipRetrieval: true,
+  },
+  {
     id: 'scholarship',
     any: [/scholar|scholership/, /wazifa|wazaif/, /financial (aid|assistance)/, /fee (concession|discount)/, /need based/],
-    unless: (q) => /\b(merit\s*based|performance\s*based|defence\s*based|sports?\s*based|garrisonian|kinship|employees?\s*scholar|need\s*based\s*scholar)\b/i.test(q),
     answerFn: (query, lang) => {
       const en = lang === 'en';
       const marks = parseMarks(query);
