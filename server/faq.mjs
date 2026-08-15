@@ -1002,9 +1002,29 @@ What would you like to know?`,
  * @returns {{id, answer, sources, lang}|null} a canned answer in the language
  *   the student wrote in, or null to fall through to the retrieval + LLM tier.
  */
+function looksLikeGibberish(text) {
+  const clean = text.replace(/[^a-zA-Z؀-ۿ\s]/g, '').trim();
+  if (!clean || clean.length < 2) return true;
+  if (/[؀-ۿ]/.test(clean)) return false;
+  const words = clean.split(/\s+/);
+  const REAL = /^(a|an|the|i|is|it|in|on|to|of|or|my|me|do|no|hi|ok|at|so|if|we|be|he|us|up|as|by|go|am|has|are|was|and|but|for|not|you|how|can|all|get|got|its|our|out|had|who|new|now|may|any|say|old|her|him|his|she|too|two|one|use|way|set|end|own|off|try|let|big|day|see|yet|ask|did|fee|sir|yes|what|when|with|this|that|from|have|will|your|more|each|they|been|like|long|make|many|some|than|them|then|time|very|just|know|take|come|over|also|back|much|most|only|into|here|last|made|done|must|give|need|want|help|tell|show|good|work|look|year|find|does|best|keep|same|wala|wali|kya|hai|hain|mein|kar|kaise|kitni|kitna|ye|wo|nahi|aur|mera|meri|apna|kab|kahan|bhi|koi|sab|se|ke|ko|ka|ki|par|ho|hoga|hogi|dein|aap|tum|yeh|kuch|abhi|acha|theek|lgu|bscs|bsse|bsit|cmai|bba|mba|fee|apply|admission|program|degree|test|marks|scholarship|merit|criteria|campus|hostel|hec)\b/i;
+  const realCount = words.filter((w) => REAL.test(w)).length;
+  return words.length <= 3 && realCount === 0;
+}
+
 export function matchFaq(query, history = []) {
   const q = query.toLowerCase().trim();
   const lang = detectLanguage(query);
+
+  if (looksLikeGibberish(q)) {
+    return {
+      id: 'gibberish',
+      answer: `Yeh samajh nahi aaya. Apna sawal dubara likhein — jaise "BSCS ki fee?" ya "How to apply?"`,
+      lang,
+      sources: [],
+      skipRetrieval: true,
+    };
+  }
 
   // A bare marks/stream follow-up ("mere 85% hain", "ics") inherits whatever
   // the conversation was actually about — it doesn't repeat "scholarship",
