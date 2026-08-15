@@ -323,6 +323,33 @@ Or see the full list here: ${FACTS.feeUrl}`,
     skipRetrieval: true,
   },
   {
+    id: 'fee-structure',
+    any: [/fee\s*structure/, /fees?\s*(table|list|comparison|compare)/, /total\s*(fee|charges|cost)/, /per\s*credit\s*hour/, /semester\s*fee/, /admission\s*fee/],
+    unless: mentionsProgram,
+    answerFn: (query, lang) => {
+      const table = `| Program | Admission Fee | Per Credit Hour | 1st Sem (Est.) | Total (Est.) |
+| --- | --- | --- | --- | --- |
+| BSCS / BSSE / BSIT / BSDS / BSAI / BS CySec | 17,500 | 7,744 | 163,252 | 1,086,848 |
+| CMAI / BS Chem / Math / Stats / Physics | 17,500 | 6,403 | 140,614 | 921,836 |
+| BBA | 17,500 | 7,392 | 155,916 | 1,032,384 |
+| BS Psych / BS Clinical Psych | 17,500 | 7,392 | 158,416 | 1,052,384 |
+| BS A&F / Mass Com / IR / Econ | 17,500 | 6,695 | 143,370 | 940,380 |
+| BS Bio / Biotech / Micro / Zoology / Nutrition | 17,500 | 6,695 | 145,870 | 960,380 |
+| BS English / BS Urdu | 17,500 | 5,160 | 110,580 | 737,760 |
+| MS/MPhil CS / IT / DS | 20,000 | 11,816 | 165,392 | 387,580 |
+| PhD CS | 50,000 | 15,246 | 195,814 | 816,408 |`;
+      const note = lang === 'en'
+        ? `\n\nAll amounts are in PKR (FY 2026-27). Fees may change — confirm with Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}\n\nFull details: ${FACTS.feeUrl}`
+        : `\n\nSaari fees PKR mein hain (FY 2026-27). Fees change ho sakti hain — confirm karein Admission Office se: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}\n\nPoori list: ${FACTS.feeUrl}`;
+      const intro = lang === 'en'
+        ? 'Here\'s the fee structure for top programs at LGU:\n\n'
+        : 'LGU ke popular programs ki fee structure:\n\n';
+      return intro + table + note;
+    },
+    sources: [FACTS.feeUrl],
+    skipRetrieval: true,
+  },
+  {
     id: 'apply-how',
     any: [/how (do i |can i |to )?apply/, /apply (online|kaise|kese)/, /admission form/, /dakhla kaise/, /form (kahan|kaise|kese)/],
     answer: `Online admission form LGU ke admission portal se bhari jaati hai: ${FACTS.applyUrl}
@@ -531,6 +558,116 @@ So if you have a supply/supplementary in Part 2, go ahead and apply — your sea
 Apply: ${FACTS.applyUrl}
 Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
     sources: [FACTS.applyUrl],
+    skipRetrieval: true,
+  },
+  {
+    id: 'entry-test-dates',
+    any: [/entry test|admission test|entrance test|test.*date|test.*kab|imtihan.*kab/, /test.*schedule/],
+    unless: (q) => /pattern|syllabus|guide|prepare|tayyar/i.test(q),
+    answer: `**Fa-2026 Entry Test Schedule:**
+
+| Faculty / Department | Last Date to Apply | Entry Test Date |
+|---|---|---|
+| Faculty of Computer Science (BSCS, BSSE, BSDS, BSAI, BS CySec, MSCS, MSAI, MSDS) | 17 Aug 2026 | 18 Aug 2026 |
+| Management Sciences, English, Criminology, Mathematics, CMAI | 17 Aug 2026 | 18 Aug 2026 |
+| Psychology (BS Psy, MS Psy, BS PCP, MSCP) | 20 Aug 2026 | 21 Aug 2026 |
+| Basic Sciences, Languages, BS Mass Comm | No entry test | Open merit |
+
+- Entry test multiple rounds mein hota hai — jaldi appear hona better hai, seats rolling basis par fill hoti hain
+- Agar result se khush nahi, next round mein dobara de sakte hain
+
+Apply: ${FACTS.applyUrl}
+Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
+    answerEn: `**Fa-2026 Entry Test Schedule:**
+
+| Faculty / Department | Last Date to Apply | Entry Test Date |
+|---|---|---|
+| Faculty of Computer Science (BSCS, BSSE, BSDS, BSAI, BS CySec, MSCS, MSAI, MSDS) | 17 Aug 2026 | 18 Aug 2026 |
+| Management Sciences, English, Criminology, Mathematics, CMAI | 17 Aug 2026 | 18 Aug 2026 |
+| Psychology (BS Psy, MS Psy, BS PCP, MSCP) | 20 Aug 2026 | 21 Aug 2026 |
+| Basic Sciences, Languages, BS Mass Comm | No entry test | Open merit |
+
+- Entry tests are conducted in multiple rounds — appearing early is better as seats fill on a rolling basis
+- You can reappear in later rounds to improve your score
+
+Apply: ${FACTS.applyUrl}
+Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
+    sources: [FACTS.applyUrl],
+    skipRetrieval: true,
+  },
+  {
+    id: 'last-date',
+    any: [/last date|deadline|akhri tarikh|kab tak|last day/, /apply.*kab tak|kab tak.*apply/],
+    unless: (q) => /merit|result|fee|challan/i.test(q),
+    answer: `**Fa-2026 Last Dates to Apply:**
+
+- Computer Science programs (BSCS, BSSE, BSDS, BSAI, BS CySec): **17 Aug 2026**
+- Management Sciences, English, Criminology, Mathematics, CMAI: **17 Aug 2026**
+- Psychology programs: **20 Aug 2026**
+- Basic Sciences, Languages, BS Mass Comm: **18 Aug 2026**
+
+Jaldi apply karein — seats limited hain aur rolling basis par fill hoti hain. Sab seats bharr jaane ke baad admissions band ho jayenge.
+
+Apply: ${FACTS.applyUrl}`,
+    answerEn: `**Fa-2026 Last Dates to Apply:**
+
+- Computer Science programs (BSCS, BSSE, BSDS, BSAI, BS CySec): **17 Aug 2026**
+- Management Sciences, English, Criminology, Mathematics, CMAI: **17 Aug 2026**
+- Psychology programs: **20 Aug 2026**
+- Basic Sciences, Languages, BS Mass Comm: **18 Aug 2026**
+
+Apply early — seats are limited and filled on a rolling basis. Admissions close once all seats are filled.
+
+Apply: ${FACTS.applyUrl}`,
+    sources: [FACTS.applyUrl],
+    skipRetrieval: true,
+  },
+  {
+    id: 'documents-required',
+    any: [/document|dastawez|kagaz/, /kya.*chahiye.*admission|admission.*chahiye/, /required.*admission|admission.*required/, /submit.*kya|kya.*submit|kya.*lana/],
+    answer: `Admission ke liye ye documents chahiye:
+
+- Intermediate / A-Level result (Part 1 ya complete)
+- Matric / O-Level result
+- CNIC ya B-Form ki copy
+- 2 passport size photos
+- Character certificate (last institution se)
+- Migration certificate (agar doosri university se aa rahe hain)
+
+Online form ke saath scan copies upload karein. Original documents admission confirm hone par verify hoti hain.
+
+Apply online: ${FACTS.applyUrl}
+Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
+    answerEn: `Documents required for admission:
+
+- Intermediate / A-Level result (Part 1 or complete)
+- Matric / O-Level result
+- CNIC or B-Form copy
+- 2 passport-size photos
+- Character certificate (from last institution)
+- Migration certificate (if transferring from another university)
+
+Upload scanned copies with your online form. Original documents are verified upon admission confirmation.
+
+Apply online: ${FACTS.applyUrl}
+Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
+    sources: [FACTS.applyUrl],
+    skipRetrieval: true,
+  },
+  {
+    id: 'hostel-transport',
+    any: [/hostel|accommodation|rehaaish|rihaaish/, /transport|bus|van|conveyance/, /bahar se|out of city|doosre shehar/],
+    answer: `LGU ki website par filhal hostel ya transport ki specific details available nahi hain. In cheezon ke liye seedha Admission Office se poochein — woh aapko updated availability bata sakte hain:
+
+- Phone: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}
+- Email: ${FACTS.email}
+- Campus: ${FACTS.address}`,
+    answerEn: `LGU's website doesn't currently list specific hostel or transport details. For the latest availability, contact the Admission Office directly:
+
+- Phone: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}
+- Email: ${FACTS.email}
+- Campus: ${FACTS.address}`,
+    sources: ['https://lgu.edu.pk/contact/'],
     skipRetrieval: true,
   },
   {

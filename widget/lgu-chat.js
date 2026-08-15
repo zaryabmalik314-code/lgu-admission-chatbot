@@ -21,7 +21,7 @@
   const VOICE_LANG = script?.dataset.voiceLang || 'ur-PK';
 
   const SUGGESTIONS = [
-    'BSCS ki fee kitni hai?',
+    'Fee structure',
     'CMAI kya hai?',
     'Is CMAI recognized by HEC?',
     'Admission criteria kya hai?',
@@ -338,6 +338,50 @@
         .panel.open ~ .bubble { display: none; }
       }
 
+      /* ── Dark mode ── */
+      .wrap.dark .panel { background: #1a1e2a; border-color: rgba(255,255,255,.08); }
+      .wrap.dark .log { background: linear-gradient(180deg, #12161f 0%, #161a24 100%); }
+      .wrap.dark .log::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); }
+      .wrap.dark .msg.bot .b {
+        background: #242938; color: #dce0e8;
+        box-shadow: 0 1px 4px rgba(0,0,0,.2), 0 0 0 1px rgba(255,255,255,.04);
+      }
+      .wrap.dark .b table { border-color: #333a4a; }
+      .wrap.dark .b th, .wrap.dark .b td { border-color: #333a4a; }
+      .wrap.dark .b th { background: #2a3040; }
+      .wrap.dark .b code { background: #2a3040; color: #c8d0dc; }
+      .wrap.dark .src { color: #6a7580; }
+      .wrap.dark .src a { color: #6a7580; border-bottom-color: #4a5560; }
+      .wrap.dark .chip {
+        background: #242938; border-color: #333a4a; color: #8ac4a0;
+      }
+      .wrap.dark .chip:hover {
+        background: #2a3040; border-color: ${GOLD}; color: #c8d8cc;
+      }
+      .wrap.dark form { background: #1a1e2a; border-top-color: #262c3a; }
+      .wrap.dark input {
+        background: #242938; border-color: #333a4a; color: #dce0e8;
+      }
+      .wrap.dark input:focus { background: #2a3040; border-color: ${GOLD}; }
+      .wrap.dark input::placeholder { color: #5a6570; }
+      .wrap.dark .mic { background: #242938; color: #8a9490; }
+      .wrap.dark .mic:hover { background: #2a3040; color: #8ac4a0; }
+      .wrap.dark .powered { background: #1a1e2a; color: #4a5460; }
+      .wrap.dark .tooltip { background: #242938; color: #dce0e8; box-shadow: 0 4px 20px rgba(0,0,0,.3); }
+      .wrap.dark .tooltip::after { border-left-color: #242938; }
+      .wrap.dark .dots span { background: #8ac4a0; }
+      .wrap.dark .read { color: #8ac4a0; }
+
+      /* Dark-mode toggle */
+      .dm-toggle {
+        background: rgba(255,255,255,.12); border: 0; color: #fff;
+        width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+        display: grid; place-items: center; font-size: 14px;
+        transition: background .2s, transform .2s;
+        position: relative; flex-shrink: 0;
+      }
+      .dm-toggle:hover { background: rgba(255,255,255,.22); transform: scale(1.1); }
+
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
           animation-duration: 0.01ms !important;
@@ -356,6 +400,7 @@
             <div class="t">${TITLE}</div>
             <div class="s"><span class="live"></span>Online</div>
           </div>
+          <button class="dm-toggle" aria-label="Toggle dark mode">🌙</button>
           <button class="close" aria-label="Close">&times;</button>
         </header>
         <div class="log"></div>
@@ -385,6 +430,20 @@
   const input = $('input');
   const sendBtn = form.querySelector('.send');
   const bubbleBtn = $('.bubble');
+
+  const wrap = $('.wrap');
+  const dmBtn = $('.dm-toggle');
+  const DM_KEY = 'lgu-chat-dark';
+  function applyDark(on) {
+    wrap.classList.toggle('dark', on);
+    dmBtn.textContent = on ? '☀️' : '🌙';
+    try { localStorage.setItem(DM_KEY, on ? '1' : '0'); } catch {}
+  }
+  let darkPref;
+  try { darkPref = localStorage.getItem(DM_KEY); } catch {}
+  if (darkPref === '1') applyDark(true);
+  else if (darkPref === null && matchMedia('(prefers-color-scheme: dark)').matches) applyDark(true);
+  dmBtn.addEventListener('click', () => applyDark(!wrap.classList.contains('dark')));
 
   const history = [];
   let busy = false;
@@ -502,6 +561,8 @@
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buf = '';
+      let currentTier = '';
+      const pendingDeltas = [];
 
       while (true) {
         const { done, value } = await reader.read();
@@ -523,10 +584,16 @@
             continue;
           }
 
-          if (evLine[1] === 'delta') {
-            answer += payload.text;
-            bubble.innerHTML = md(answer);
-            log.scrollTop = log.scrollHeight;
+          if (evLine[1] === 'meta') {
+            currentTier = payload.tier;
+          } else if (evLine[1] === 'delta') {
+            if (currentTier === 'faq' || currentTier === 'cache') {
+              pendingDeltas.push(payload.text);
+            } else {
+              answer += payload.text;
+              bubble.innerHTML = md(answer);
+              log.scrollTop = log.scrollHeight;
+            }
           } else if (evLine[1] === 'done') {
             sources = payload.sources || [];
           } else if (evLine[1] === 'error') {
@@ -534,6 +601,12 @@
             bubble.innerHTML = md(answer);
           }
         }
+      }
+
+      if (pendingDeltas.length) {
+        await new Promise((r) => setTimeout(r, 400));
+        answer = pendingDeltas.join('');
+        bubble.innerHTML = md(answer);
       }
 
       if (!answer) {

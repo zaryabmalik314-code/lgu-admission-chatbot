@@ -16,6 +16,7 @@ import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS, mentionsProgram, PROGRA
 import { checkRateLimit, rateLimitStats } from './ratelimit.mjs';
 import { answerStream, isConfigured, describeProvider, ALL_PROVIDERS_FAILED_FALLBACK } from './llm.mjs';
 import { getCached, setCached, cacheStats } from './cache.mjs';
+import { trackQuestion, analyticsStats } from './analytics.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = process.env.PORT || 3000;
@@ -81,6 +82,10 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
+app.get('/api/analytics', (req, res) => {
+  res.json(analyticsStats());
+});
+
 function sse(res) {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -138,6 +143,7 @@ app.post('/api/chat', async (req, res) => {
 
     // Tier 1 — a clean FAQ hit answers instantly, for free.
     if (faq && isNarrowEnoughForCannedAnswer(question, faq)) {
+      trackQuestion(question, 'faq', faq.id);
       stream.send('meta', { tier: 'faq', intent: faq.id });
       stream.send('delta', { text: faq.answer });
       stream.send('done', { sources: faq.sources });
@@ -152,6 +158,7 @@ app.post('/api/chat', async (req, res) => {
     if (cacheable) {
       const cached = getCached(question);
       if (cached) {
+        trackQuestion(question, 'cache', faq?.id);
         stream.send('meta', { tier: 'cache', intent: faq?.id });
         stream.send('delta', { text: cached.text });
         stream.send('done', { sources: cached.sources });
@@ -187,7 +194,9 @@ app.post('/api/chat', async (req, res) => {
       return stream.end();
     }
 
-    stream.send('meta', { tier: faq ? 'hybrid' : 'rag', sources: cited.map((c) => c.url) });
+    const tier = faq ? 'hybrid' : 'rag';
+    trackQuestion(question, tier, faq?.id);
+    stream.send('meta', { tier, sources: cited.map((c) => c.url) });
 
     const fullAnswer = await answerStream({
       question,
