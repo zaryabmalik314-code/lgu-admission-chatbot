@@ -507,7 +507,9 @@
     fitViewport();
   }
 
-  $('.bubble').addEventListener('click', openPanel);
+  $('.bubble').addEventListener('click', () => {
+    panel.classList.contains('open') ? closePanel() : openPanel();
+  });
   $('.close').addEventListener('click', closePanel);
 
   document.addEventListener('keydown', (e) => {
