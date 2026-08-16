@@ -1044,13 +1044,57 @@ function correctTypos(text) {
     .join('');
 }
 
+const KNOWN_WORDS = new Set([
+  // English common
+  'a','an','the','i','is','it','in','on','to','of','or','my','me','do','no','hi','ok','at','so',
+  'if','we','be','he','us','up','as','by','go','am','has','are','was','and','but','for','not',
+  'you','how','can','all','get','got','its','our','out','had','who','new','now','may','any','say',
+  'old','her','him','his','she','too','two','one','use','way','set','end','own','off','try','let',
+  'big','day','see','yet','ask','did','sir','yes','what','whats','when','with','this','that','from',
+  'have','will','your','more','each','they','been','like','long','make','many','some','than','them',
+  'then','time','very','just','know','take','come','over','also','back','much','most','only','into',
+  'here','last','made','done','must','give','need','want','help','tell','show','good','work','look',
+  'year','find','does','best','keep','same','offer','about','which','after','first','where','check',
+  'detail','info','list','total','per','near','open','close','start','hows','there','these','those',
+  'would','could','should','please','thanks','thank','really','still','right','left',
+  // Roman Urdu
+  'kya','hai','hain','mein','kar','kaise','kitni','kitna','ye','wo','nahi','aur','mera','meri',
+  'apna','kab','kahan','bhi','koi','sab','se','ke','ko','ka','ki','par','ho','hoga','hogi','dein',
+  'aap','tum','yeh','kuch','abhi','acha','theek','wala','wali','bata','batao','bolo','chahiye',
+  'milta','milti','hota','hoti','sakta','sakti','dedo','dikhao','pata','naya','purana','konsa',
+  'konsi','kaisa','jaisa','lena','dena','raha','rahi','jata','jati','ata','ati','lagta','lagti',
+  'seat','roadmap',
+  // Programs & academics
+  'lgu','bs','ms','cs','it','ai','ds','se','phd','mphil','msc','mscs','msai','msds','bscs','bsse',
+  'bsit','bsai','bsds','cmai','bba','mba','adp','dpt','llb','acf',
+  'fee','apply','admission','program','degree','test','mark','scholarship','merit','criteria',
+  'campus','hostel','hec','nceac','transport','bus','document','deadline','schedule','semester',
+  'credit','hour','cgpa','gpa','percentage','aggregate','result','pass','fail',
+  // Departments & subjects
+  'science','engineering','computer','software','data','psychology','criminology','english','urdu',
+  'chemistry','physics','nursing','pharmd','math','maths','biology','biotech','biotechnology',
+  'genetics','microbiology','nutrition','dietetics','pharmacy','pharmacology','accounting','finance','management','marketing',
+  'business','commerce','economics','law','cyber','security','forensic','digital','clinical',
+  'applied','literature','electronics','electrical',
+  // Common question words
+  'date','when','next','entry','structure','available','offered','required','submit','eligible',
+  'minimum','maximum','contact','number','phone','email','address','location','form','online',
+  'download','prospectus','brochure','intake','fall','spring','morning','evening','weekend',
+  'duration','year','month','class','course','subject','elective','internship','project','thesis',
+  'research','faculty','teacher','professor','department','office','library','lab',
+]);
+
 function looksLikeGibberish(text) {
   const clean = text.replace(/[^a-zA-Z؀-ۿ\s]/g, '').trim();
   if (!clean || clean.length < 2) return true;
   if (/[؀-ۿ]/.test(clean)) return false;
-  const words = clean.split(/\s+/);
-  const REAL = /^(a|an|the|i|is|it|in|on|to|of|or|my|me|do|no|hi|ok|at|so|if|we|be|he|us|up|as|by|go|am|has|are|was|and|but|for|not|you|how|can|all|get|got|its|our|out|had|who|new|now|may|any|say|old|her|him|his|she|too|two|one|use|way|set|end|own|off|try|let|big|day|see|yet|ask|did|fee|sir|yes|what|whats|when|with|this|that|from|have|will|your|more|each|they|been|like|long|make|many|some|than|them|then|time|very|just|know|take|come|over|also|back|much|most|only|into|here|last|made|done|must|give|need|want|help|tell|show|good|work|look|year|find|does|best|keep|same|offer|about|which|after|first|where|check|math|maths|phd|mphil|mscs|msai|msds|dept|course|roadmap|seat|wala|wali|kya|hai|hain|mein|kar|kaise|kitni|kitna|ye|wo|nahi|aur|mera|meri|apna|kab|kahan|bhi|koi|sab|se|ke|ko|ka|ki|par|ho|hoga|hogi|dein|aap|tum|yeh|kuch|abhi|acha|theek|lgu|bs|ms|cs|it|ai|ds|se|bscs|bsse|bsit|bsai|bsds|cmai|bba|mba|fee|fees|apply|admission|program|degree|test|marks|scholarship|merit|criteria|campus|hostel|hec|transport|bus|document|deadline|schedule|semester|credit|science|engineering|computer|psychology|criminology|english|urdu|chemistry|physics|nursing|pharmd|dpt|llb|last|date|when|next|entry|structure|available|offered|required|submit|eligible|minimum|whats|hows|tell|about|details|info|list|total|per)\b/i;
-  const realCount = words.filter((w) => REAL.test(w)).length;
+  const words = clean.toLowerCase().split(/\s+/);
+  const realCount = words.filter((w) => {
+    if (KNOWN_WORDS.has(w)) return true;
+    if (w.endsWith('s') && KNOWN_WORDS.has(w.slice(0, -1))) return true;
+    if (w.endsWith('ing') && KNOWN_WORDS.has(w.slice(0, -3))) return true;
+    return false;
+  }).length;
   return words.length <= 3 && realCount === 0;
 }
 
