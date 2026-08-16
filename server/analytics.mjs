@@ -11,6 +11,10 @@ const counters = {
   tierHits: { faq: 0, cache: 0, rag: 0, hybrid: 0, 'faq-fallback': 0 },
   intentHits: {},
   topQuestions: new Map(),
+  tokenEstimates: { input: 0, output: 0 },
+  providerHits: {},
+  costSavedByCache: 0,
+  costSavedByFaq: 0,
 };
 
 const feedback = {
@@ -28,6 +32,9 @@ function normalize(q) {
   return q.toLowerCase().trim().replace(/\s+/g, ' ').replace(/[?.!]+$/, '');
 }
 
+const AVG_INPUT_TOKENS = { hybrid: 1200, rag: 2400 };
+const AVG_OUTPUT_TOKENS = { hybrid: 200, rag: 400 };
+
 export function trackQuestion(question, tier, intentId) {
   counters.totalQuestions++;
 
@@ -35,6 +42,14 @@ export function trackQuestion(question, tier, intentId) {
     counters.tierHits[tier]++;
   } else if (tier) {
     counters.tierHits[tier] = 1;
+  }
+
+  if (tier === 'faq' || tier === 'faq-fallback') counters.costSavedByFaq++;
+  if (tier === 'cache') counters.costSavedByCache++;
+
+  if (tier === 'hybrid' || tier === 'rag') {
+    counters.tokenEstimates.input += AVG_INPUT_TOKENS[tier];
+    counters.tokenEstimates.output += AVG_OUTPUT_TOKENS[tier];
   }
 
   if (intentId) {
@@ -48,6 +63,10 @@ export function trackQuestion(question, tier, intentId) {
     const sorted = [...counters.topQuestions.entries()].sort((a, b) => b[1] - a[1]);
     counters.topQuestions = new Map(sorted.slice(0, TOP_Q_LIMIT));
   }
+}
+
+export function trackProvider(provider) {
+  counters.providerHits[provider] = (counters.providerHits[provider] || 0) + 1;
 }
 
 export function trackFeedback(question, answer, tier, intentId, rating) {
@@ -79,9 +98,21 @@ export function analyticsStats() {
     .slice(0, 15)
     .map(([id, count]) => ({ intent: id, count }));
 
+  const llmCalls = (counters.tierHits.hybrid || 0) + (counters.tierHits.rag || 0);
+  const freeCalls = (counters.tierHits.faq || 0) + (counters.tierHits.cache || 0) + (counters.tierHits['faq-fallback'] || 0);
+
   return {
     totalQuestions: counters.totalQuestions,
     tiers: { ...counters.tierHits },
+    cost: {
+      llmCalls,
+      freeCalls,
+      savedByFaq: counters.costSavedByFaq,
+      savedByCache: counters.costSavedByCache,
+      pctFree: counters.totalQuestions ? Math.round((freeCalls / counters.totalQuestions) * 100) : 0,
+      estimatedTokens: { ...counters.tokenEstimates },
+      providers: { ...counters.providerHits },
+    },
     topIntents,
     topQuestions,
     feedback: {

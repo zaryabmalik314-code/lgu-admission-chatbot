@@ -20,6 +20,7 @@
  * widget in front of real admission traffic.
  */
 import { FACTS, detectLanguage } from './faq.mjs';
+import { trackProvider } from './analytics.mjs';
 
 const PROVIDER = (process.env.LLM_PROVIDER || 'groq').toLowerCase();
 
@@ -274,7 +275,7 @@ export async function answerStream({ question, history = [], chunks, faqHint, on
   for (const provider of providers) {
     let started = false;
     try {
-      return await STREAM_FN[provider]({
+      const result = await STREAM_FN[provider]({
         question,
         history,
         context,
@@ -282,6 +283,8 @@ export async function answerStream({ question, history = [], chunks, faqHint, on
         lang,
         onDelta: (delta) => { started = true; onDelta(delta); },
       });
+      trackProvider(provider);
+      return result;
     } catch (err) {
       if (started) throw err;
       console.error(`[llm] ${provider} failed, trying next provider:`, err?.message || err);
