@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LGU Chatbot — Analytics Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e1e4e8; min-height: 100vh; }
+  .header { background: linear-gradient(135deg, #1a5e1f 0%, #2d8a34 100%); padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 22px; font-weight: 600; color: #fff; }
+  .header .refresh { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: background 0.2s; }
+  .header .refresh:hover { background: rgba(255,255,255,0.25); }
+  .live-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; display: inline-block; margin-right: 8px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 20px; }
+  .card .label { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .card .value { font-size: 32px; font-weight: 700; }
+  .card .sub { font-size: 12px; color: #8b949e; margin-top: 4px; }
+  .green { color: #4ade80; }
+  .yellow { color: #f0b429; }
+  .blue { color: #58a6ff; }
+  .purple { color: #bc8cff; }
+  .red { color: #f85149; }
+  .section { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+  .section h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #e1e4e8; }
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 12px; }
+  .bar-label { width: 100px; font-size: 13px; color: #8b949e; text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 28px; background: #21262d; border-radius: 6px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 6px; transition: width 0.6s ease; display: flex; align-items: center; padding-left: 10px; font-size: 12px; font-weight: 600; color: #fff; min-width: fit-content; }
+  .bar-fill.faq { background: linear-gradient(90deg, #238636, #2ea043); }
+  .bar-fill.cache { background: linear-gradient(90deg, #1f6feb, #58a6ff); }
+  .bar-fill.hybrid { background: linear-gradient(90deg, #9e6a03, #f0b429); }
+  .bar-fill.rag { background: linear-gradient(90deg, #8b5cf6, #bc8cff); }
+  .bar-fill.fallback { background: linear-gradient(90deg, #6e7681, #8b949e); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px; border-bottom: 1px solid #30363d; }
+  td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #21262d; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: rgba(46,160,67,0.2); color: #4ade80; }
+  .badge-red { background: rgba(248,81,73,0.2); color: #f85149; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } .cards { grid-template-columns: repeat(2, 1fr); } }
+  .empty { color: #484f58; font-size: 13px; font-style: italic; padding: 16px 0; }
+  .provider-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .provider-chip { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .provider-chip.groq { background: rgba(249,115,22,0.15); color: #fb923c; }
+  .provider-chip.gemini { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .provider-chip.anthropic { background: rgba(168,85,247,0.15); color: #c084fc; }
+  .savings-bar { height: 32px; background: #21262d; border-radius: 8px; overflow: hidden; display: flex; margin-top: 8px; }
+  .savings-bar .seg { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; transition: width 0.6s ease; }
+  .savings-bar .seg.free { background: #238636; }
+  .savings-bar .seg.paid { background: #9e6a03; }
+  .savings-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 12px; color: #8b949e; }
+  .savings-legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+  .savings-legend .l-free::before { background: #238636; }
+  .savings-legend .l-paid::before { background: #9e6a03; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="live-dot"></span> LGU Chatbot Analytics</h1>
+  <button class="refresh" onclick="loadData()">Refresh</button>
+</div>
+
+<div class="container">
+  <div class="cards">
+    <div class="card">
+      <div class="label">Total Questions</div>
+      <div class="value green" id="total">—</div>
+      <div class="sub">since last deploy</div>
+    </div>
+    <div class="card">
+      <div class="label">Free (No API Cost)</div>
+      <div class="value blue" id="free">—</div>
+      <div class="sub" id="pctFree"></div>
+    </div>
+    <div class="card">
+      <div class="label">LLM Calls</div>
+      <div class="value yellow" id="llm">—</div>
+      <div class="sub">hybrid + rag</div>
+    </div>
+    <div class="card">
+      <div class="label">Feedback Score</div>
+      <div class="value" id="feedback">—</div>
+      <div class="sub" id="feedbackSub"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Cost Savings</h2>
+    <div class="savings-bar" id="savingsBar"></div>
+    <div class="savings-legend">
+      <span class="l-free">Free (FAQ + Cache)</span>
+      <span class="l-paid">Paid (LLM)</span>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="section">
+      <h2>Tier Breakdown</h2>
+      <div class="bar-chart" id="tierChart"></div>
+    </div>
+    <div class="section">
+      <h2>Provider Usage</h2>
+      <div class="provider-chips" id="providerChips"></div>
+      <div style="margin-top:16px">
+        <div class="label" style="font-size:12px;color:#8b949e;margin-bottom:4px">Estimated Tokens</div>
+        <div id="tokens" style="font-size:14px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="section">
+      <h2>Top Questions</h2>
+      <table id="topQuestions">
+        <thead><tr><th>Question</th><th>Count</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="empty" id="noQuestions" style="display:none">No questions yet</div>
+    </div>
+    <div class="section">
+      <h2>Top Intents (FAQ Hits)</h2>
+      <table id="topIntents">
+        <thead><tr><th>Intent</th><th>Count</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="empty" id="noIntents" style="display:none">No intents yet</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Recent Downvotes</h2>
+    <table id="downvotes">
+      <thead><tr><th>Question</th><th>Tier</th><th>Time</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="empty" id="noDownvotes" style="display:none">No downvotes — everything's good!</div>
+  </div>
+</div>
+
+<script>
+function $(id) { return document.getElementById(id); }
+
+async function loadData() {
+  try {
+    const [analytics, health] = await Promise.all([
+      fetch('/api/analytics').then(r => r.json()),
+      fetch('/api/health').then(r => r.json()),
+    ]);
+    render(analytics, health);
+  } catch (e) {
+    console.error('Failed to load:', e);
+  }
+}
+
+function render(d, h) {
+  $('total').textContent = d.totalQuestions.toLocaleString();
+  $('free').textContent = d.cost.freeCalls.toLocaleString();
+  $('pctFree').textContent = d.totalQuestions ? d.cost.pctFree + '% of traffic is free' : 'no traffic yet';
+  $('llm').textContent = d.cost.llmCalls.toLocaleString();
+
+  const up = d.feedback.up, down = d.feedback.down, total = up + down;
+  if (total === 0) {
+    $('feedback').textContent = '—';
+    $('feedback').className = 'value';
+    $('feedbackSub').textContent = 'no votes yet';
+  } else {
+    const pct = Math.round((up / total) * 100);
+    $('feedback').textContent = pct + '%';
+    $('feedback').className = 'value ' + (pct >= 80 ? 'green' : pct >= 50 ? 'yellow' : 'red');
+    $('feedbackSub').textContent = up + ' up / ' + down + ' down';
+  }
+
+  // Savings bar
+  const freePct = d.totalQuestions ? d.cost.pctFree : 0;
+  $('savingsBar').innerHTML = d.totalQuestions === 0
+    ? '<div class="seg free" style="width:100%;opacity:0.3">No data yet</div>'
+    : `<div class="seg free" style="width:${freePct}%">${freePct}%</div><div class="seg paid" style="width:${100-freePct}%">${100-freePct}%</div>`;
+
+  // Tier chart
+  const tiers = d.tiers;
+  const maxTier = Math.max(...Object.values(tiers), 1);
+  const tierNames = { faq: 'FAQ', cache: 'Cache', hybrid: 'Hybrid', rag: 'RAG', 'faq-fallback': 'Fallback' };
+  const tierColors = { faq: 'faq', cache: 'cache', hybrid: 'hybrid', rag: 'rag', 'faq-fallback': 'fallback' };
+  $('tierChart').innerHTML = Object.entries(tiers).map(([k, v]) =>
+    `<div class="bar-row">
+      <div class="bar-label">${tierNames[k] || k}</div>
+      <div class="bar-track">
+        <div class="bar-fill ${tierColors[k]}" style="width:${Math.max(v/maxTier*100, v?8:0)}%">${v}</div>
+      </div>
+    </div>`
+  ).join('');
+
+  // Providers
+  const providers = d.cost.providers || {};
+  const providerKeys = Object.keys(providers);
+  $('providerChips').innerHTML = providerKeys.length === 0
+    ? '<div class="empty">No LLM calls yet</div>'
+    : providerKeys.map(p => `<div class="provider-chip ${p}">${p}: ${providers[p]}</div>`).join('');
+
+  const tok = d.cost.estimatedTokens || {};
+  $('tokens').innerHTML = (tok.input || tok.output)
+    ? `<span class="blue">${(tok.input||0).toLocaleString()}</span> input &nbsp;/&nbsp; <span class="purple">${(tok.output||0).toLocaleString()}</span> output`
+    : '<span style="color:#484f58">No tokens used yet</span>';
+
+  // Top questions
+  const tq = d.topQuestions || [];
+  const tqBody = $('topQuestions').querySelector('tbody');
+  if (tq.length === 0) { tqBody.innerHTML = ''; $('noQuestions').style.display = 'block'; }
+  else {
+    $('noQuestions').style.display = 'none';
+    tqBody.innerHTML = tq.slice(0, 10).map(q =>
+      `<tr><td>${esc(q.question)}</td><td>${q.count}</td></tr>`
+    ).join('');
+  }
+
+  // Top intents
+  const ti = d.topIntents || [];
+  const tiBody = $('topIntents').querySelector('tbody');
+  if (ti.length === 0) { tiBody.innerHTML = ''; $('noIntents').style.display = 'block'; }
+  else {
+    $('noIntents').style.display = 'none';
+    tiBody.innerHTML = ti.slice(0, 10).map(i =>
+      `<tr><td>${esc(i.intent)}</td><td>${i.count}</td></tr>`
+    ).join('');
+  }
+
+  // Downvotes
+  const dv = d.feedback.recentDown || [];
+  const dvBody = $('downvotes').querySelector('tbody');
+  if (dv.length === 0) { dvBody.innerHTML = ''; $('noDownvotes').style.display = 'block'; }
+  else {
+    $('noDownvotes').style.display = 'none';
+    dvBody.innerHTML = dv.slice(0, 10).map(v =>
+      `<tr><td>${esc(v.question)}</td><td><span class="badge badge-${v.tier==='faq'?'green':'red'}">${v.tier||'—'}</span></td><td>${timeAgo(v.at)}</td></tr>`
+    ).join('');
+  }
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function timeAgo(iso) {
+  if (!iso) return '—';
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+loadData();
+setInterval(loadData, 15000);
+</script>
+</body>
+</html>

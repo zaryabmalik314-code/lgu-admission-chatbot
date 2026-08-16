@@ -66,6 +66,7 @@ app.use(
 
 app.use('/widget.js', express.static(join(ROOT, 'widget', 'lgu-chat.js')));
 app.use('/demo', express.static(join(ROOT, 'demo')));
+app.use('/dashboard', express.static(join(ROOT, 'dashboard')));
 app.get('/', (req, res) => res.redirect('/demo/'));
 
 app.get('/api/health', async (req, res) => {
