@@ -101,6 +101,16 @@ const SYNONYMS = {
   mathematics: 'mathematics computational',
   accounting: 'accounting finance',
   acount: 'accounting finance',
+  acf: 'accounting finance',
+  pharmd: 'pharmd doctor pharmacy',
+  'pharm-d': 'pharmd doctor pharmacy',
+  dpt: 'dpt doctor physical therapy physiotherapy',
+  physiotherapy: 'physical therapy dpt',
+  llb: 'llb law bachelor',
+  cyber: 'cyber security bscs',
+  cybersecurity: 'cyber security',
+  nutrition: 'human nutrition dietetics',
+  dietetics: 'human nutrition dietetics',
   // Degree levels the site spells out in full. "MPhil Mathematics" would never
   // reach the "Masters of Philosophy in Mathematics" page otherwise, because
   // the page never contains the token "mphil".

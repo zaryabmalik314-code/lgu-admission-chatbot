@@ -225,9 +225,7 @@ const LEVELS = [
     label: { en: 'BS (undergraduate)', ur: 'BS (undergraduate)' },
     duration: { en: '4 years, 8 semesters', ur: '4 saal, 8 semesters' },
     eligibility: { en: 'Intermediate (or equivalent) with 50%', ur: 'Intermediate (ya equivalent) 50% ke saath' },
-    // CMAI leads here for the same reason it leads programs-list and the
-    // "featured program" system-prompt rule: no personalization signal to
-    // weigh it against yet.
+    // CMAI listed first among BS programs — natural placement, not forced.
     programs: [
       'BS Computational Mathematics & AI (CMAI) — HEC-recognized',
       'BSCS / BSSE / BSIT / BS Data Science / BS AI / BS Cyber Security',
