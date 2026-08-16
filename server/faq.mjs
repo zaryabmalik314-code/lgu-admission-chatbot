@@ -944,13 +944,13 @@ For admission-related queries: ${FACTS.admissionOffice} / ${FACTS.admissionMobil
   {
     id: 'owner',
     any: [
-      /who owns (you+|y+o+u+|u|this|this bot|this chatbot)/,
-      /who runs (you+|y+o+u+|u|this|this bot|this chatbot)/,
+      /who owns? (you+|y+o+u+|u|this|this bot|this chatbot)/,
+      /who runs? (you+|y+o+u+|u|this|this bot|this chatbot)/,
       /are you (official|affiliated)/,
       /(ye bot|ye chatbot) kis ka hai/,
     ],
-    answer: `Main Lahore Garrison University (LGU) ke admissions ka official assistant hoon. Mujhe Zaryab Malik ne LGU ke liye develop kiya hai.`,
-    answerEn: `I'm the official LGU (Lahore Garrison University) admissions assistant. I was developed for LGU by Zaryab Malik.`,
+    answer: `Main Lahore Garrison University (LGU) ka official admissions assistant hoon — LGU ka hi product. Develop Zaryab Malik ne kiya hai LGU ke liye.`,
+    answerEn: `I belong to Lahore Garrison University (LGU) — I'm their official admissions assistant. Developed for LGU by Zaryab Malik.`,
     sources: [],
     skipRetrieval: true,
   },
