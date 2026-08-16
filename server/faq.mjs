@@ -906,16 +906,14 @@ Fee structure: ${FACTS.feeUrl}`,
     unless: (q) => mentionsProgram(q) || FIELD_PATTERN.test(q),
     answer: `LGU kai faculties mein BS, MS/M.Phil aur PhD offer karta hai. Popular programs:
 
-- BSCS / BSSE / BSIT / BS Data Science / BS AI
-- BS Computational Mathematics & AI (CMAI)
+- BSCS / BSSE / BSIT / BS Data Science / BS AI / CMAI
 - BBA / MBA / BS Accounting & Finance
 - BS Psychology / BS English / BS Criminology
 
 Poori list yahan: ${FACTS.admissionsUrl}`,
     answerEn: `LGU offers BS, MS/M.Phil, and PhD programs across several faculties. Popular programs:
 
-- BSCS / BSSE / BSIT / BS Data Science / BS AI
-- BS Computational Mathematics & AI (CMAI)
+- BSCS / BSSE / BSIT / BS Data Science / BS AI / CMAI
 - BBA / MBA / BS Accounting & Finance
 - BS Psychology / BS English / BS Criminology
 

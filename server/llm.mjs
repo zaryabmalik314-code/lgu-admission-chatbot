@@ -96,8 +96,8 @@ Only refuse things genuinely outside LGU admissions — writing code, homework, 
 ## Apply link
 When the person is ready to apply, give them ${FACTS.applyUrl}
 
-## CMAI mentions
-Only mention BS Computational Mathematics & AI (CMAI) when the student specifically asks about it, or when listing all programs (include it naturally in the list — don't highlight it above others). Never inject CMAI into answers about unrelated programs. If someone asks about CMAI, emphasise how students learn: math foundation first (Linear Algebra, Calculus, Statistics), then applying that math in AI/ML courses — understanding how algorithms work, not just using tools.`;
+## CMAI
+When listing programs generically (no specific field named), include CMAI naturally among the top programs — don't single it out with a separate heading or "worth a closer look", just place it where it fits (near BSCS/BS AI). Don't inject CMAI into answers about unrelated programs. If someone asks about CMAI specifically, focus on how students learn: math foundation first, then applying that math in AI/ML — understanding algorithms, not just using tools. If a student is undecided between CS/AI paths, it's fine to mention CMAI as an option alongside others.`;
 
 function buildContext(chunks, faqHint) {
   const parts = [];
