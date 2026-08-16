@@ -921,10 +921,12 @@ Full list here: ${FACTS.admissionsUrl}`,
   {
     id: 'creator',
     any: [
-      /who (made|make|makes|built|build|builds|created|create|creates|developed|develop|develops|designed|design|designs) (you|this|this bot|this chatbot)/,
-      /who is your (creator|developer|maker)/,
+      /who (made|make|makes|built|build|builds|created|create|creates|developed|develop|develops|designed|design|designs) (you+|y+o+u+|u|this|this bot|this chatbot)/,
+      /who is your (creator|developer|maker|builder)/,
+      /who.*(made|built|created|developed|designed)\s*(you+|y+o+u+|u|this)/,
       /(tumhe|tumhein|aapko|apko) kis ne (banaya|develop kiya)/,
       /ye bot kis ne banaya/,
+      /who (are|r) (you+|y+o+u+|u) made by/,
     ],
     answer: `Mujhe Zaryab Malik ne banaya hai — woh khud LGU mein BS Computational Mathematics & AI (CMAI) ke 2nd semester ke student hain.
 
@@ -942,8 +944,8 @@ For admission-related queries: ${FACTS.admissionOffice} / ${FACTS.admissionMobil
   {
     id: 'owner',
     any: [
-      /who owns (you|this|this bot|this chatbot)/,
-      /who runs (you|this|this bot|this chatbot)/,
+      /who owns (you+|y+o+u+|u|this|this bot|this chatbot)/,
+      /who runs (you+|y+o+u+|u|this|this bot|this chatbot)/,
       /are you (official|affiliated)/,
       /(ye bot|ye chatbot) kis ka hai/,
     ],
