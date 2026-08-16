@@ -16,7 +16,7 @@ import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS, mentionsProgram, PROGRA
 import { checkRateLimit, rateLimitStats } from './ratelimit.mjs';
 import { answerStream, isConfigured, describeProvider, ALL_PROVIDERS_FAILED_FALLBACK } from './llm.mjs';
 import { getCached, setCached, cacheStats } from './cache.mjs';
-import { trackQuestion, trackFeedback, analyticsStats } from './analytics.mjs';
+import { trackQuestion, trackFeedback, analyticsStats, subscribeAnalytics } from './analytics.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = process.env.PORT || 3000;
@@ -85,6 +85,10 @@ app.get('/api/health', async (req, res) => {
 
 app.get('/api/analytics', (req, res) => {
   res.json(analyticsStats());
+});
+
+app.get('/api/analytics/live', (req, res) => {
+  subscribeAnalytics(req, res);
 });
 
 app.post('/api/feedback', (req, res) => {

@@ -58,12 +58,15 @@
   .savings-legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
   .savings-legend .l-free::before { background: #238636; }
   .savings-legend .l-paid::before { background: #9e6a03; }
+  .live-tag { font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 12px; margin-left: 10px; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.5px; }
+  .live-tag.connected { background: rgba(74,222,128,0.2); color: #4ade80; }
+  .live-tag.connecting { background: rgba(240,180,41,0.2); color: #f0b429; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1><span class="live-dot"></span> LGU Chatbot Analytics</h1>
+  <h1><span class="live-dot"></span> LGU Chatbot Analytics <span class="live-tag connected" id="liveStatus">LIVE</span></h1>
   <button class="refresh" onclick="loadData()">Refresh</button>
 </div>
 
@@ -149,17 +152,14 @@ function $(id) { return document.getElementById(id); }
 
 async function loadData() {
   try {
-    const [analytics, health] = await Promise.all([
-      fetch('/api/analytics').then(r => r.json()),
-      fetch('/api/health').then(r => r.json()),
-    ]);
-    render(analytics, health);
+    const d = await fetch('/api/analytics').then(r => r.json());
+    render(d);
   } catch (e) {
     console.error('Failed to load:', e);
   }
 }
 
-function render(d, h) {
+function render(d) {
   $('total').textContent = d.totalQuestions.toLocaleString();
   $('free').textContent = d.cost.freeCalls.toLocaleString();
   $('pctFree').textContent = d.totalQuestions ? d.cost.pctFree + '% of traffic is free' : 'no traffic yet';
@@ -254,8 +254,29 @@ function timeAgo(iso) {
   return Math.floor(diff/86400) + 'd ago';
 }
 
-loadData();
-setInterval(loadData, 15000);
+// Live SSE stream — dashboard updates instantly when a question comes in
+function connectLive() {
+  const es = new EventSource('/api/analytics/live');
+  $('liveStatus').textContent = 'Connecting...';
+  $('liveStatus').className = 'live-tag connecting';
+  es.onopen = () => {
+    $('liveStatus').textContent = 'LIVE';
+    $('liveStatus').className = 'live-tag connected';
+  };
+  es.onmessage = (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      render(d);
+    } catch {}
+  };
+  es.onerror = () => {
+    $('liveStatus').textContent = 'Reconnecting...';
+    $('liveStatus').className = 'live-tag connecting';
+    es.close();
+    setTimeout(connectLive, 3000);
+  };
+}
+connectLive();
 </script>
 </body>
 </html>

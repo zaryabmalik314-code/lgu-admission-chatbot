@@ -28,6 +28,27 @@ const feedback = {
 const TOP_Q_LIMIT = 50;
 const RECENT_DOWN_LIMIT = 30;
 
+const liveClients = new Set();
+
+function broadcast() {
+  const data = JSON.stringify(analyticsStats());
+  for (const res of liveClients) {
+    try { res.write(`data: ${data}\n\n`); } catch { liveClients.delete(res); }
+  }
+}
+
+export function subscribeAnalytics(req, res) {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.write(`data: ${JSON.stringify(analyticsStats())}\n\n`);
+  liveClients.add(res);
+  req.on('close', () => liveClients.delete(res));
+}
+
 function normalize(q) {
   return q.toLowerCase().trim().replace(/\s+/g, ' ').replace(/[?.!]+$/, '');
 }
@@ -63,6 +84,7 @@ export function trackQuestion(question, tier, intentId) {
     const sorted = [...counters.topQuestions.entries()].sort((a, b) => b[1] - a[1]);
     counters.topQuestions = new Map(sorted.slice(0, TOP_Q_LIMIT));
   }
+  broadcast();
 }
 
 export function trackProvider(provider) {
@@ -85,6 +107,7 @@ export function trackFeedback(question, answer, tier, intentId, rating) {
       feedback.recentDown.length = RECENT_DOWN_LIMIT;
     }
   }
+  broadcast();
 }
 
 export function analyticsStats() {
