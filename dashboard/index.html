@@ -9,8 +9,10 @@
   body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e1e4e8; min-height: 100vh; }
   .header { background: linear-gradient(135deg, #1a5e1f 0%, #2d8a34 100%); padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; }
   .header h1 { font-size: 22px; font-weight: 600; color: #fff; }
-  .header .refresh { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: background 0.2s; }
-  .header .refresh:hover { background: rgba(255,255,255,0.25); }
+  .header .actions { display: flex; gap: 8px; align-items: center; }
+  .header .refresh, .header .logout { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: background 0.2s; }
+  .header .refresh:hover, .header .logout:hover { background: rgba(255,255,255,0.25); }
+  .header .logout { border-color: rgba(248,81,73,0.5); }
   .live-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; display: inline-block; margin-right: 8px; animation: pulse 2s infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
   .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
@@ -24,6 +26,7 @@
   .blue { color: #58a6ff; }
   .purple { color: #bc8cff; }
   .red { color: #f85149; }
+  .orange { color: #fb923c; }
   .section { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; margin-bottom: 16px; }
   .section h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #e1e4e8; }
   .bar-chart { display: flex; flex-direction: column; gap: 10px; }
@@ -42,6 +45,8 @@
   .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
   .badge-green { background: rgba(46,160,67,0.2); color: #4ade80; }
   .badge-red { background: rgba(248,81,73,0.2); color: #f85149; }
+  .badge-yellow { background: rgba(240,180,41,0.2); color: #f0b429; }
+  .badge-orange { background: rgba(249,115,22,0.2); color: #fb923c; }
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } .cards { grid-template-columns: repeat(2, 1fr); } }
   .empty { color: #484f58; font-size: 13px; font-style: italic; padding: 16px 0; }
@@ -61,13 +66,59 @@
   .live-tag { font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 12px; margin-left: 10px; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.5px; }
   .live-tag.connected { background: rgba(74,222,128,0.2); color: #4ade80; }
   .live-tag.connecting { background: rgba(240,180,41,0.2); color: #f0b429; }
+
+  /* Login overlay */
+  .login-overlay {
+    position: fixed; inset: 0; background: #0f1117;
+    display: flex; align-items: center; justify-content: center; z-index: 100;
+  }
+  .login-overlay.hidden { display: none; }
+  .login-box {
+    background: #161b22; border: 1px solid #30363d; border-radius: 16px;
+    padding: 40px; width: 380px; max-width: 90vw; text-align: center;
+  }
+  .login-box h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .login-box p { font-size: 13px; color: #8b949e; margin-bottom: 24px; }
+  .login-box input {
+    width: 100%; padding: 12px 16px; border: 2px solid #30363d; border-radius: 10px;
+    background: #0f1117; color: #e1e4e8; font-size: 15px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .login-box input:focus { border-color: #2ea043; }
+  .login-box button {
+    width: 100%; margin-top: 16px; padding: 12px; border: 0; border-radius: 10px;
+    background: linear-gradient(135deg, #1a5e1f, #2d8a34); color: #fff;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+  }
+  .login-box button:hover { opacity: 0.9; }
+  .login-error { color: #f85149; font-size: 13px; margin-top: 12px; display: none; }
+  .login-logo { font-size: 36px; margin-bottom: 16px; }
+
+  #dashboard { display: none; }
 </style>
 </head>
 <body>
 
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">🔒</div>
+    <h2>Dashboard Login</h2>
+    <p>LGU Chatbot Analytics — Admin Only</p>
+    <form id="loginForm">
+      <input type="password" id="passInput" placeholder="Enter password" autocomplete="current-password" />
+      <button type="submit">Login</button>
+    </form>
+    <div class="login-error" id="loginError">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<div id="dashboard">
 <div class="header">
   <h1><span class="live-dot"></span> LGU Chatbot Analytics <span class="live-tag connected" id="liveStatus">LIVE</span></h1>
-  <button class="refresh" onclick="loadData()">Refresh</button>
+  <div class="actions">
+    <button class="refresh" onclick="loadData()">Refresh</button>
+    <button class="logout" onclick="doLogout()">Logout</button>
+  </div>
 </div>
 
 <div class="container">
@@ -137,27 +188,107 @@
     </div>
   </div>
 
-  <div class="section">
-    <h2>Recent Downvotes</h2>
-    <table id="downvotes">
-      <thead><tr><th>Question</th><th>Tier</th><th>Time</th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <div class="empty" id="noDownvotes" style="display:none">No downvotes — everything's good!</div>
+  <div class="two-col">
+    <div class="section">
+      <h2>Recent Downvotes</h2>
+      <table id="downvotes">
+        <thead><tr><th>Question</th><th>Tier</th><th>Time</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="empty" id="noDownvotes" style="display:none">No downvotes — everything's good!</div>
+    </div>
+    <div class="section">
+      <h2>Unanswered Questions</h2>
+      <table id="unanswered">
+        <thead><tr><th>Question</th><th>Reason</th><th>Time</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="empty" id="noUnanswered" style="display:none">All questions answered!</div>
+    </div>
   </div>
+</div>
 </div>
 
 <script>
 function $(id) { return document.getElementById(id); }
 
+let authToken = '';
+const SK = 'lgu-dash-auth';
+
+function authHeaders() {
+  return { 'x-dashboard-auth': authToken };
+}
+
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const pass = $('passInput').value;
+  if (!pass) return;
+  try {
+    const res = await fetch('/api/analytics', { headers: { 'x-dashboard-auth': pass } });
+    if (res.status === 401) {
+      $('loginError').style.display = 'block';
+      return;
+    }
+    authToken = pass;
+    try { sessionStorage.setItem(SK, pass); } catch {}
+    $('loginOverlay').classList.add('hidden');
+    $('dashboard').style.display = 'block';
+    const d = await res.json();
+    render(d);
+    connectLive();
+  } catch {
+    $('loginError').style.display = 'block';
+  }
+});
+
+function doLogout() {
+  authToken = '';
+  try { sessionStorage.removeItem(SK); } catch {}
+  $('loginOverlay').classList.remove('hidden');
+  $('dashboard').style.display = 'none';
+  $('passInput').value = '';
+  $('loginError').style.display = 'none';
+}
+
+(async function autoLogin() {
+  let saved;
+  try { saved = sessionStorage.getItem(SK); } catch {}
+  if (!saved) return;
+  try {
+    const res = await fetch('/api/analytics', { headers: { 'x-dashboard-auth': saved } });
+    if (!res.ok) return;
+    authToken = saved;
+    $('loginOverlay').classList.add('hidden');
+    $('dashboard').style.display = 'block';
+    const d = await res.json();
+    render(d);
+    connectLive();
+  } catch {}
+})();
+
 async function loadData() {
   try {
-    const d = await fetch('/api/analytics').then(r => r.json());
+    const d = await fetch('/api/analytics', { headers: authHeaders() }).then(r => r.json());
     render(d);
   } catch (e) {
     console.error('Failed to load:', e);
   }
 }
+
+const reasonLabels = {
+  'gibberish': 'Gibberish',
+  'no-llm-key': 'No LLM Key',
+  'all-providers-failed': 'Providers Down',
+  'rate-limited': 'Rate Limited',
+  'llm-error': 'LLM Error',
+};
+const reasonBadge = {
+  'gibberish': 'badge-yellow',
+  'no-llm-key': 'badge-red',
+  'all-providers-failed': 'badge-red',
+  'rate-limited': 'badge-orange',
+  'llm-error': 'badge-red',
+};
 
 function render(d) {
   $('total').textContent = d.totalQuestions.toLocaleString();
@@ -177,13 +308,11 @@ function render(d) {
     $('feedbackSub').textContent = up + ' up / ' + down + ' down';
   }
 
-  // Savings bar
   const freePct = d.totalQuestions ? d.cost.pctFree : 0;
   $('savingsBar').innerHTML = d.totalQuestions === 0
     ? '<div class="seg free" style="width:100%;opacity:0.3">No data yet</div>'
     : `<div class="seg free" style="width:${freePct}%">${freePct}%</div><div class="seg paid" style="width:${100-freePct}%">${100-freePct}%</div>`;
 
-  // Tier chart
   const tiers = d.tiers;
   const maxTier = Math.max(...Object.values(tiers), 1);
   const tierNames = { faq: 'FAQ', cache: 'Cache', hybrid: 'Hybrid', rag: 'RAG', 'faq-fallback': 'Fallback' };
@@ -197,7 +326,6 @@ function render(d) {
     </div>`
   ).join('');
 
-  // Providers
   const providers = d.cost.providers || {};
   const providerKeys = Object.keys(providers);
   $('providerChips').innerHTML = providerKeys.length === 0
@@ -209,7 +337,6 @@ function render(d) {
     ? `<span class="blue">${(tok.input||0).toLocaleString()}</span> input &nbsp;/&nbsp; <span class="purple">${(tok.output||0).toLocaleString()}</span> output`
     : '<span style="color:#484f58">No tokens used yet</span>';
 
-  // Top questions
   const tq = d.topQuestions || [];
   const tqBody = $('topQuestions').querySelector('tbody');
   if (tq.length === 0) { tqBody.innerHTML = ''; $('noQuestions').style.display = 'block'; }
@@ -220,7 +347,6 @@ function render(d) {
     ).join('');
   }
 
-  // Top intents
   const ti = d.topIntents || [];
   const tiBody = $('topIntents').querySelector('tbody');
   if (ti.length === 0) { tiBody.innerHTML = ''; $('noIntents').style.display = 'block'; }
@@ -231,7 +357,6 @@ function render(d) {
     ).join('');
   }
 
-  // Downvotes
   const dv = d.feedback.recentDown || [];
   const dvBody = $('downvotes').querySelector('tbody');
   if (dv.length === 0) { dvBody.innerHTML = ''; $('noDownvotes').style.display = 'block'; }
@@ -239,6 +364,16 @@ function render(d) {
     $('noDownvotes').style.display = 'none';
     dvBody.innerHTML = dv.slice(0, 10).map(v =>
       `<tr><td>${esc(v.question)}</td><td><span class="badge badge-${v.tier==='faq'?'green':'red'}">${v.tier||'—'}</span></td><td>${timeAgo(v.at)}</td></tr>`
+    ).join('');
+  }
+
+  const ua = d.unanswered || [];
+  const uaBody = $('unanswered').querySelector('tbody');
+  if (ua.length === 0) { uaBody.innerHTML = ''; $('noUnanswered').style.display = 'block'; }
+  else {
+    $('noUnanswered').style.display = 'none';
+    uaBody.innerHTML = ua.slice(0, 15).map(u =>
+      `<tr><td>${esc(u.question)}</td><td><span class="badge ${reasonBadge[u.reason]||'badge-red'}">${reasonLabels[u.reason]||u.reason}</span></td><td>${timeAgo(u.at)}</td></tr>`
     ).join('');
   }
 }
@@ -254,9 +389,11 @@ function timeAgo(iso) {
   return Math.floor(diff/86400) + 'd ago';
 }
 
-// Live SSE stream — dashboard updates instantly when a question comes in
+let liveES = null;
 function connectLive() {
-  const es = new EventSource('/api/analytics/live');
+  if (liveES) liveES.close();
+  const es = new EventSource('/api/analytics/live?token=' + encodeURIComponent(authToken));
+  liveES = es;
   $('liveStatus').textContent = 'Connecting...';
   $('liveStatus').className = 'live-tag connecting';
   es.onopen = () => {
@@ -276,7 +413,6 @@ function connectLive() {
     setTimeout(connectLive, 3000);
   };
 }
-connectLive();
 </script>
 </body>
 </html>

@@ -20,13 +20,14 @@ const counters = {
 const feedback = {
   up: 0,
   down: 0,
-  // Recent downvotes only — that's the actionable list (what to go fix),
-  // not a full log. Upvotes don't need remembering individually.
   recentDown: [],
 };
 
+const unanswered = [];
+
 const TOP_Q_LIMIT = 50;
 const RECENT_DOWN_LIMIT = 30;
+const UNANSWERED_LIMIT = 50;
 
 const liveClients = new Set();
 
@@ -87,6 +88,18 @@ export function trackQuestion(question, tier, intentId) {
   broadcast();
 }
 
+export function trackUnanswered(question, reason) {
+  unanswered.unshift({
+    question: normalize(question),
+    reason,
+    at: new Date().toISOString(),
+  });
+  if (unanswered.length > UNANSWERED_LIMIT) {
+    unanswered.length = UNANSWERED_LIMIT;
+  }
+  broadcast();
+}
+
 export function trackProvider(provider) {
   counters.providerHits[provider] = (counters.providerHits[provider] || 0) + 1;
 }
@@ -143,5 +156,6 @@ export function analyticsStats() {
       down: feedback.down,
       recentDown: feedback.recentDown,
     },
+    unanswered,
   };
 }

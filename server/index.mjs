@@ -16,7 +16,7 @@ import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS, mentionsProgram, PROGRA
 import { checkRateLimit, rateLimitStats } from './ratelimit.mjs';
 import { answerStream, isConfigured, describeProvider, ALL_PROVIDERS_FAILED_FALLBACK } from './llm.mjs';
 import { getCached, setCached, cacheStats } from './cache.mjs';
-import { trackQuestion, trackFeedback, analyticsStats, subscribeAnalytics } from './analytics.mjs';
+import { trackQuestion, trackFeedback, trackUnanswered, analyticsStats, subscribeAnalytics } from './analytics.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = process.env.PORT || 3000;
@@ -69,6 +69,14 @@ app.use('/demo', express.static(join(ROOT, 'demo')));
 app.use('/dashboard', express.static(join(ROOT, 'dashboard')));
 app.get('/', (req, res) => res.redirect('/demo/'));
 
+const DASH_PASS = process.env.DASHBOARD_PASSWORD || '';
+function dashAuth(req, res, next) {
+  if (!DASH_PASS) return next();
+  const token = req.get('x-dashboard-auth') || req.query.token;
+  if (token === DASH_PASS) return next();
+  return res.status(401).json({ error: 'unauthorized' });
+}
+
 app.get('/api/health', async (req, res) => {
   const idx = await loadIndex();
   res.json({
@@ -83,11 +91,11 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-app.get('/api/analytics', (req, res) => {
+app.get('/api/analytics', dashAuth, (req, res) => {
   res.json(analyticsStats());
 });
 
-app.get('/api/analytics/live', (req, res) => {
+app.get('/api/analytics/live', dashAuth, (req, res) => {
   subscribeAnalytics(req, res);
 });
 
@@ -169,6 +177,7 @@ app.post('/api/chat', async (req, res) => {
     // Tier 1 — a clean FAQ hit answers instantly, for free.
     if (faq && isNarrowEnoughForCannedAnswer(question, faq)) {
       trackQuestion(question, 'faq', faq.id);
+      if (faq.id === 'gibberish') trackUnanswered(question, 'gibberish');
       stream.send('meta', { tier: 'faq', intent: faq.id });
       stream.send('delta', { text: faq.answer });
       stream.send('done', { sources: faq.sources });
@@ -212,8 +221,7 @@ app.post('/api/chat', async (req, res) => {
     cited = chunks.filter((c) => !c.isHeader);
 
     if (!isConfigured()) {
-      // Without a key the bot still works, just narrower: hand back the best
-      // FAQ match or point at the pages retrieval found.
+      trackUnanswered(question, 'no-llm-key');
       stream.send('meta', { tier: 'faq-fallback' });
       stream.send('delta', { text: fallbackAnswer(faq, cited) });
       stream.send('done', { sources: cited.slice(0, 3).map((c) => c.url) });
@@ -246,14 +254,17 @@ app.post('/api/chat', async (req, res) => {
     stream.send('done', { sources });
     stream.end();
 
-    // Skip caching the "every provider failed" message — that's a transient
-    // outage, not an answer worth replaying to the next student.
+    if (fullAnswer === ALL_PROVIDERS_FAILED_FALLBACK) {
+      trackUnanswered(question, 'all-providers-failed');
+    }
+
     if (cacheable && fullAnswer && fullAnswer !== ALL_PROVIDERS_FAILED_FALLBACK) {
       setCached(question, { text: fullAnswer, sources });
     }
   } catch (err) {
     const rateLimited = err?.status === 429;
     console.error(rateLimited ? 'chat error: LLM rate limited' : 'chat error:', err);
+    trackUnanswered(question, rateLimited ? 'rate-limited' : 'llm-error');
 
     // If nothing streamed yet (the usual case — rate limits and provider errors
     // hit on the first call), degrade to the same answer the no-key path gives:
