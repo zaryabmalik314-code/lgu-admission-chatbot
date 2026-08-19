@@ -1057,31 +1057,44 @@ const KNOWN_WORDS = new Set([
   'year','find','does','best','keep','same','offer','about','which','after','first','where','check',
   'detail','info','list','total','per','near','open','close','start','hows','there','these','those',
   'would','could','should','please','thanks','thank','really','still','right','left',
+  'hello','hey','explain','describe','compare','difference','between','type','much','pay','cost',
+  'free','paid','give','every','before','during','own','run','why','full','half','part',
+  'high','low','above','below','few','another','both','same','other','such','well','even',
+  'without','within','through','again','already','away','name','thing','place','area','category',
   // Roman Urdu
   'kya','hai','hain','mein','kar','kaise','kitni','kitna','ye','wo','nahi','aur','mera','meri',
   'apna','kab','kahan','bhi','koi','sab','se','ke','ko','ka','ki','par','ho','hoga','hogi','dein',
   'aap','tum','yeh','kuch','abhi','acha','theek','wala','wali','bata','batao','bolo','chahiye',
   'milta','milti','hota','hoti','sakta','sakti','dedo','dikhao','pata','naya','purana','konsa',
   'konsi','kaisa','jaisa','lena','dena','raha','rahi','jata','jati','ata','ati','lagta','lagti',
-  'seat','roadmap',
+  'seat','roadmap','salam','assalam','alaikum','walaikum','slam','aoa','helo','shukriya',
+  'zaroorat','zaruri','poochna','samajh','samjha','samjhao','bol','bolo','sunao','suno',
+  'pehle','baad','agla','upar','neeche','andar','bahar','sath','beech',
   // Programs & academics
   'lgu','bs','ms','cs','it','ai','ds','se','phd','mphil','msc','mscs','msai','msds','bscs','bsse',
   'bsit','bsai','bsds','cmai','bba','mba','adp','dpt','llb','acf',
+  'bcse','bcs','msit','msds','bsaf','mcs','ics','fsc','facs','icom','dcom',
+  'pre','medical','intermediate','matric','alevel','olevel','level',
   'fee','apply','admission','program','degree','test','mark','scholarship','merit','criteria',
   'campus','hostel','hec','nceac','transport','bus','document','deadline','schedule','semester',
   'credit','hour','cgpa','gpa','percentage','aggregate','result','pass','fail',
+  'installment','concession','discount','exemption','waiver','refund','challan','voucher',
+  'kinship','garrison','defence','defense','military','sports','performance','need',
   // Departments & subjects
   'science','engineering','computer','software','data','psychology','criminology','english','urdu',
   'chemistry','physics','nursing','pharmd','math','maths','biology','biotech','biotechnology',
   'genetics','microbiology','nutrition','dietetics','pharmacy','pharmacology','accounting','finance','management','marketing',
   'business','commerce','economics','law','cyber','security','forensic','digital','clinical',
   'applied','literature','electronics','electrical',
+  'media','communication','mass','international','relation','political','sociology','zoology',
+  'education','islamic','study','environmental','statistics','computational',
   // Common question words
   'date','when','next','entry','structure','available','offered','required','submit','eligible',
   'minimum','maximum','contact','number','phone','email','address','location','form','online',
   'download','prospectus','brochure','intake','fall','spring','morning','evening','weekend',
   'duration','year','month','class','course','subject','elective','internship','project','thesis',
   'research','faculty','teacher','professor','department','office','library','lab',
+  'eligibility','requirement','process','procedure','rule','policy','important','last','seat',
 ]);
 
 function looksLikeGibberish(text) {
@@ -1101,16 +1114,6 @@ function looksLikeGibberish(text) {
 export function matchFaq(query, history = []) {
   const q = query.toLowerCase().trim();
   const lang = detectLanguage(query);
-
-  if (looksLikeGibberish(q)) {
-    return {
-      id: 'gibberish',
-      answer: `Yeh samajh nahi aaya. Apna sawal dubara likhein — jaise "BSCS ki fee?" ya "How to apply?"`,
-      lang,
-      sources: [],
-      skipRetrieval: true,
-    };
-  }
 
   // A bare marks/stream follow-up ("mere 85% hain", "ics") inherits whatever
   // the conversation was actually about — it doesn't repeat "scholarship",
@@ -1142,6 +1145,16 @@ export function matchFaq(query, history = []) {
   // override a match the exact text already found.
   const qFixed = correctTypos(q);
   const fixed = qFixed !== q;
+
+  if (looksLikeGibberish(fixed ? qFixed : q)) {
+    return {
+      id: 'gibberish',
+      answer: `Yeh samajh nahi aaya. Apna sawal dubara likhein — jaise "BSCS ki fee?" ya "How to apply?"`,
+      lang,
+      sources: [],
+      skipRetrieval: true,
+    };
+  }
 
   for (const intent of INTENTS) {
     const anyHit = intent.any.some((re) => re.test(q) || (fixed && re.test(qFixed)));
