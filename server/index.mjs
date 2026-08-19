@@ -17,6 +17,7 @@ import { checkRateLimit, rateLimitStats } from './ratelimit.mjs';
 import { answerStream, isConfigured, describeProvider, ALL_PROVIDERS_FAILED_FALLBACK } from './llm.mjs';
 import { getCached, setCached, cacheStats } from './cache.mjs';
 import { trackQuestion, trackFeedback, trackUnanswered, analyticsStats, subscribeAnalytics } from './analytics.mjs';
+import { webSearch } from './websearch.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = process.env.PORT || 3000;
@@ -220,6 +221,29 @@ app.post('/api/chat', async (req, res) => {
     // they don't belong in the citation list shown to the student.
     cited = chunks.filter((c) => !c.isHeader);
 
+    // Web search fallback — when the scraped KB doesn't cover the topic well,
+    // search the web (scoped to LGU) for extra context. Only fires on pure
+    // RAG queries (no FAQ match) with weak BM25 scores.
+    const topScore = cited[0]?.score ?? 0;
+    if (!faq && topScore < 3 && isConfigured()) {
+      try {
+        const webResults = await webSearch(question);
+        for (const r of webResults) {
+          chunks.push({
+            title: `[Web] ${r.title}`,
+            url: r.url,
+            text: r.snippet,
+            score: 0,
+            isWeb: true,
+          });
+        }
+        if (webResults.length) {
+          const webCited = webResults.map((r) => ({ title: r.title, url: r.url }));
+          cited.push(...webCited);
+        }
+      } catch { /* non-fatal */ }
+    }
+
     if (!isConfigured()) {
       trackUnanswered(question, 'no-llm-key');
       stream.send('meta', { tier: 'faq-fallback' });
@@ -228,7 +252,8 @@ app.post('/api/chat', async (req, res) => {
       return stream.end();
     }
 
-    const tier = faq ? 'hybrid' : 'rag';
+    const usedWeb = chunks.some((c) => c.isWeb);
+    const tier = faq ? 'hybrid' : usedWeb ? 'rag+web' : 'rag';
     trackQuestion(question, tier, faq?.id);
     const meta = { tier, intent: faq?.id, sources: cited.map((c) => c.url) };
     if (switchLang) meta.setLang = switchLang;
