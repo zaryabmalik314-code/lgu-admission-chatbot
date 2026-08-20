@@ -8,7 +8,7 @@
 
 const counters = {
   totalQuestions: 0,
-  tierHits: { faq: 0, cache: 0, rag: 0, hybrid: 0, 'faq-fallback': 0 },
+  tierHits: { faq: 0, cache: 0, rag: 0, hybrid: 0, 'faq-fallback': 0, blocked: 0 },
   intentHits: {},
   topQuestions: new Map(),
   tokenEstimates: { input: 0, output: 0 },

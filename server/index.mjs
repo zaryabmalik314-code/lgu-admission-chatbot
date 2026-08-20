@@ -12,12 +12,22 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { search, loadIndex } from './retrieve.mjs';
-import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS, mentionsProgram, PROGRAM_PATTERN, detectLangSwitch } from './faq.mjs';
+import { matchFaq, isNarrowEnoughForCannedAnswer, FACTS, mentionsProgram, PROGRAM_PATTERN, detectLangSwitch, detectLanguage } from './faq.mjs';
 import { checkRateLimit, rateLimitStats } from './ratelimit.mjs';
 import { answerStream, isConfigured, describeProvider, ALL_PROVIDERS_FAILED_FALLBACK } from './llm.mjs';
 import { getCached, setCached, cacheStats } from './cache.mjs';
 import { trackQuestion, trackFeedback, trackUnanswered, analyticsStats, subscribeAnalytics } from './analytics.mjs';
 import { webSearch } from './websearch.mjs';
+import { detectInjection } from './guard.mjs';
+
+// What a blocked prompt-injection attempt gets back — same warm, one-sentence
+// refusal voice as the LLM's own off-topic case, so this fast path doesn't
+// read as a different, more robotic wall than the model would give anyway.
+const INJECTION_REFUSAL = {
+  en: `I can only help with LGU admissions — programs, fees, criteria, and applying. For anything else, please contact the Admission Office: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}.`,
+  'roman-ur': `Mein sirf LGU admissions mein madad kar sakta hoon — programs, fees, criteria aur apply karne mein. Baqi kisi cheez ke liye Admission Office se rabta karein: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}.`,
+  ur: `میں صرف LGU داخلوں میں مدد کر سکتا ہوں — پروگرامز، فیس، معیار اور اپلائی کرنے میں۔ کسی اور بات کے لیے براہ کرم داخلہ آفس سے رابطہ کریں: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}۔`,
+};
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = process.env.PORT || 3000;
@@ -173,6 +183,22 @@ app.post('/api/chat', async (req, res) => {
   let streamedAny = false;
 
   try {
+    // Tier 0 — known prompt-injection / jailbreak shapes get refused before
+    // any FAQ match, retrieval, or paid LLM call. Deterministic and free:
+    // this is what actually catches the repeated attempts on the dashboard,
+    // rather than hoping the model resists a new phrasing of the same trick
+    // every single time it's tried.
+    const injection = detectInjection(question);
+    if (injection) {
+      trackQuestion(question, 'blocked', injection);
+      trackUnanswered(question, `injection:${injection}`);
+      const lang = effectiveLang === 'en' ? 'en' : detectLanguage(question);
+      stream.send('meta', { tier: 'blocked' });
+      stream.send('delta', { text: INJECTION_REFUSAL[lang] || INJECTION_REFUSAL.en });
+      stream.send('done', { sources: [] });
+      return stream.end();
+    }
+
     faq = matchFaq(question, history);
 
     // Tier 1 — a clean FAQ hit answers instantly, for free.
