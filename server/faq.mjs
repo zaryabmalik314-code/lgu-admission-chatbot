@@ -930,12 +930,12 @@ Full list here: ${FACTS.admissionsUrl}`,
     ],
     answer: `Mujhe Zaryab Malik ne banaya hai — woh khud LGU mein BS Computational Mathematics & AI (CMAI) ke 2nd semester ke student hain.
 
-Instagram: https://www.instagram.com/capt_zaryab_malik
+Portfolio: https://zaryabmalik314-code.github.io/PERSONAL-PORTFOLIO/
 
 Admission se related sawal ke liye: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
     answerEn: `I was built by Zaryab Malik — he's a 2nd semester BS Computational Mathematics & AI (CMAI) student at LGU.
 
-Instagram: https://www.instagram.com/capt_zaryab_malik
+Portfolio: https://zaryabmalik314-code.github.io/PERSONAL-PORTFOLIO/
 
 For admission-related queries: ${FACTS.admissionOffice} / ${FACTS.admissionMobile}`,
     sources: [],
