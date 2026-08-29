@@ -919,17 +919,97 @@ Full list here: ${FACTS.admissionsUrl}`,
     sources: [FACTS.admissionsUrl],
   },
   {
-    id: 'fall-2026-calendar',
+    id: 'fall-2026-bs-start',
     any: [
-      /fall\s*2026.*(calendar|schedule|date|start|begin|exam|freeze|withdraw)/,
-      /(calendar|schedule|date).*(fall\s*2026)/,
-      /when.*(class|semester|exam).*(start|begin|fall\s*2026)/,
+      /when.*(bs|bachelor|under.?grad).*(class|start|begin|shuru).*(fall|2026)/,
+      /(bs|bachelor).*(class|semester).*(kab|when).*(start|shuru|begin)/,
+      /bs class.*kab.*start/,
+      /when do bs class/,
+    ],
+    answer: `Fall 2026 mein BS classes 31 August 2026 se shuru hongi.`,
+    answerEn: `BS classes for Fall 2026 start on 31 August 2026.`,
+    sources: ['https://lgu.edu.pk/academic-calendar-fall-2026'],
+    skipRetrieval: true,
+  },
+  {
+    id: 'fall-2026-ms-start',
+    any: [
+      /when.*(ms|mphil|phd|grad).*(class|start|begin|shuru).*(fall|2026)/,
+      /(ms|mphil|phd).*(class|semester).*(kab|when).*(start|shuru|begin)/,
+    ],
+    answer: `Fall 2026 mein MS/MPhil/PhD classes 29 August 2026 se shuru hongi.`,
+    answerEn: `MS/MPhil/PhD classes for Fall 2026 start on 29 August 2026.`,
+    sources: ['https://lgu.edu.pk/academic-calendar-fall-2026'],
+    skipRetrieval: true,
+  },
+  {
+    id: 'fall-2026-freeze',
+    any: [
+      /semester freeze.*(2026|fall)/,
+      /(freeze|last date.*freeze).*(fall|2026)/,
+      /freeze kab/,
+    ],
+    answer: `Fall 2026 mein semester freeze ki last date 14 September 2026 hai.`,
+    answerEn: `The last date for semester freeze in Fall 2026 is 14 September 2026.`,
+    sources: ['https://lgu.edu.pk/academic-calendar-fall-2026'],
+    skipRetrieval: true,
+  },
+  {
+    id: 'fall-2026-midterm',
+    any: [
+      /mid.?semester.*(exam|2026|fall)/,
+      /mid.?term.*(exam|2026|fall)/,
+      /(mid|midterm).*(kab|when|date).*(2026|fall)/,
+    ],
+    answer: `Fall 2026 ke mid-semester exams 24 October 2026 se shuru honge.`,
+    answerEn: `Mid-semester exams for Fall 2026 start from 24 October 2026.`,
+    sources: ['https://lgu.edu.pk/academic-calendar-fall-2026'],
+    skipRetrieval: true,
+  },
+  {
+    id: 'fall-2026-withdrawal',
+    any: [
+      /semester withdrawal.*(2026|fall)/,
+      /withdraw.*(last date|deadline).*(2026|fall)/,
+      /withdrawal kab/,
+    ],
+    answer: `Fall 2026 mein semester withdrawal ki last date 6 November 2026 hai.`,
+    answerEn: `The last date for semester withdrawal in Fall 2026 is 6 November 2026.`,
+    sources: ['https://lgu.edu.pk/academic-calendar-fall-2026'],
+    skipRetrieval: true,
+  },
+  {
+    id: 'fall-2026-finals',
+    any: [
+      /end.?semester.*(exam|2026|fall)/,
+      /final.*(exam|2026|fall)/,
+      /(end|final).*(exam).*(kab|when|date)/,
+    ],
+    answer: `Fall 2026 ke end-semester exams 26 December 2026 se shuru honge.`,
+    answerEn: `End-semester exams for Fall 2026 start from 26 December 2026.`,
+    sources: ['https://lgu.edu.pk/academic-calendar-fall-2026'],
+    skipRetrieval: true,
+  },
+  {
+    id: 'fall-2026-result',
+    any: [
+      /result.*(declaration|submit|announce).*(2026|fall)/,
+      /result kab.*(2026|fall|aaye)/,
+      /when.*(result).*(2026|fall|declare)/,
+    ],
+    answer: `Fall 2026 ke results: Departments COE ko 7 Jan 2027 tak submit karenge, aur COE 18 Jan 2027 ko results declare karega.`,
+    answerEn: `Fall 2026 results: Departments submit to COE by 7 Jan 2027, and COE declares results on 18 Jan 2027.`,
+    sources: ['https://lgu.edu.pk/academic-calendar-fall-2026'],
+    skipRetrieval: true,
+  },
+  {
+    id: 'fall-2026-calendar-full',
+    any: [
+      /fall\s*2026.*(calendar|schedule|full|complete|all dates|sari dates)/,
+      /(calendar|schedule|academic).*(fall\s*2026)/,
+      /(fall|2026).*(calendar|schedule)/,
+      /when.*(class|semester).*(start|begin).*(fall\s*2026)/,
       /(classes|semester) kab (start|shuru).*(fall|2026)/,
-      /fall\s*2026.*(kab|when)/,
-      /mid.?semester.*2026/,
-      /end.?semester.*2026/,
-      /semester freeze.*2026/,
-      /result.*(declaration|submit).*2026/,
     ],
     answer: `Fall 2026 Academic Calendar:
 
@@ -940,9 +1020,7 @@ Full list here: ${FACTS.admissionsUrl}`,
 • Semester Withdrawal Last Date: 6 Nov 2026
 • End-Semester Exams: 26 Dec 2026 se
 • Result Submission by Depts to COE: 7 Jan 2027
-• Result Declaration by COE: 18 Jan 2027
-
-Plan ahead, stay focused, achieve excellence!`,
+• Result Declaration by COE: 18 Jan 2027`,
     answerEn: `Fall 2026 Academic Calendar:
 
 • Commencement of MS/MPhil/PhD Classes: 29 Aug 2026
@@ -952,9 +1030,7 @@ Plan ahead, stay focused, achieve excellence!`,
 • Semester Withdrawal - Last Date: 6 Nov 2026
 • End-Semester Exams: From 26 Dec 2026
 • Result Submission by Depts to COE: 7 Jan 2027
-• Result Declaration by COE: 18 Jan 2027
-
-Plan ahead, stay focused, achieve excellence!`,
+• Result Declaration by COE: 18 Jan 2027`,
     sources: ['https://lgu.edu.pk/academic-calendar-fall-2026'],
     skipRetrieval: true,
   },
