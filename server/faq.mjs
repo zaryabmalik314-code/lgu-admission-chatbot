@@ -919,6 +919,46 @@ Full list here: ${FACTS.admissionsUrl}`,
     sources: [FACTS.admissionsUrl],
   },
   {
+    id: 'fall-2026-calendar',
+    any: [
+      /fall\s*2026.*(calendar|schedule|date|start|begin|exam|freeze|withdraw)/,
+      /(calendar|schedule|date).*(fall\s*2026)/,
+      /when.*(class|semester|exam).*(start|begin|fall\s*2026)/,
+      /(classes|semester) kab (start|shuru).*(fall|2026)/,
+      /fall\s*2026.*(kab|when)/,
+      /mid.?semester.*2026/,
+      /end.?semester.*2026/,
+      /semester freeze.*2026/,
+      /result.*(declaration|submit).*2026/,
+    ],
+    answer: `Fall 2026 Academic Calendar:
+
+• MS/MPhil/PhD Classes Shuru: 29 Aug 2026
+• BS Classes Shuru: 31 Aug 2026
+• Semester Freeze Last Date: 14 Sep 2026
+• Mid-Semester Exam: 24 Oct 2026 se
+• Semester Withdrawal Last Date: 6 Nov 2026
+• End-Semester Exams: 26 Dec 2026 se
+• Result Submission by Depts to COE: 7 Jan 2027
+• Result Declaration by COE: 18 Jan 2027
+
+Plan ahead, stay focused, achieve excellence!`,
+    answerEn: `Fall 2026 Academic Calendar:
+
+• Commencement of MS/MPhil/PhD Classes: 29 Aug 2026
+• Commencement of BS Classes: 31 Aug 2026
+• Semester Freeze - Last Date: 14 Sep 2026
+• Mid-Semester Exam: From 24 Oct 2026
+• Semester Withdrawal - Last Date: 6 Nov 2026
+• End-Semester Exams: From 26 Dec 2026
+• Result Submission by Depts to COE: 7 Jan 2027
+• Result Declaration by COE: 18 Jan 2027
+
+Plan ahead, stay focused, achieve excellence!`,
+    sources: ['https://lgu.edu.pk/academic-calendar-fall-2026'],
+    skipRetrieval: true,
+  },
+  {
     id: 'creator',
     any: [
       /who (made|make|makes|built|build|builds|created|create|creates|developed|develop|develops|designed|design|designs) (you+|y+o+u+|u|this|this bot|this chatbot)/,
