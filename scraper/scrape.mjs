@@ -24,9 +24,7 @@ const HEADERS = {
 const CONCURRENCY = 6;
 const DELAY_MS = 150;
 
-// Only pages a prospective student would ever ask about. The sitemap has 600+
-// URLs; the rest is conference/QEC/faculty-profile noise that would just dilute
-// retrieval.
+// Only pages a prospective student would ever ask about.
 const INCLUDE = [
   /admission/i,
   /fee-structure/i,
@@ -36,10 +34,14 @@ const INCLUDE = [
   /criteria/i,
   /road-?map/i,
   /roadmap/i,
-  /program/i,
+  /\/programs/i,
   /courses/i,
   /department-of-/i,
-  /^\/(apply|merit-list|contact|regulations|about-us|facilities|campus-life|result|download|testing|test)\/?$/i,
+  /\/departments\//i,
+  /\/faculty\//i,
+  /\/academics/i,
+  /\/academic-calendar/i,
+  /^\/(apply|how-to-apply|admission-list|merit-list|contact|regulations|about|campus-facilities|campus-life|result|results|download|testing|test)\/?$/i,
   /associate-degree/i,
   /adp-/i,
   /post-adp/i,
@@ -54,11 +56,16 @@ const INCLUDE = [
   /mphil/i,
   /ph-?d/i,
   /international-diploma/i,
-  /internationalisation-(admissions|programs|application-process|about|language)/i,
+  /internationali[sz]ation/i,
   /student-handbook/i,
+  /student-affairs/i,
   /how-can-we-help/i,
-  // Program detail pages that name the degree without any of the markers
-  // above — "/mscs-overview/", "/criminology-overview/", "/doctoral/".
+  /\/transport/i,
+  /\/policies/i,
+  /\/noc/i,
+  /\/excellence\//i,
+  /\/entrepreneurship/i,
+  // Program detail pages
   /overview/i,
   /doctoral/i,
   /award-of-/i,
@@ -119,7 +126,10 @@ async function fetchText(url, tries = 3) {
 }
 
 async function getSitemapUrls() {
-  const xml = await fetchText(`${ORIGIN}/wp-sitemap-posts-page-1.xml`);
+  // LGU moved from WordPress to Next.js in late 2026 — sitemap path changed.
+  const xml =
+    (await fetchText(`${ORIGIN}/sitemap.xml`)) ||
+    (await fetchText(`${ORIGIN}/wp-sitemap-posts-page-1.xml`));
   if (!xml) throw new Error('Could not read sitemap');
   return [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
 }
@@ -173,7 +183,10 @@ function extractTables(html) {
 function extractTitle(html) {
   const m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   if (!m) return '';
-  return decodeEntities(m[1]).replace(/\s*[–|-]\s*Lahore Garrison University.*$/i, '').trim();
+  return decodeEntities(m[1])
+    .replace(/\s*\|\s*LGU\s*\|\s*Lahore Garrison University.*$/i, '')
+    .replace(/\s*[–|-]\s*Lahore Garrison University.*$/i, '')
+    .trim();
 }
 
 // Avada chrome that survives the #content narrowing. Pure noise in retrieval —
@@ -192,10 +205,11 @@ const NOISE_LINES = [
 ];
 
 export function htmlToText(html) {
-  // Narrow to the main content column first — Avada wraps the real page body in
-  // #content, and everything outside it is the same nav/footer on every page.
+  // Narrow to the main content column first.
+  // Next.js site uses <main>, old WordPress/Avada site used #content.
+  const mainMatch = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i);
   const contentMatch = html.match(/<div[^>]+id=["']content["'][^>]*>([\s\S]*)<\/div>\s*<\/div>/i);
-  let body = contentMatch ? contentMatch[1] : html;
+  let body = mainMatch ? mainMatch[1] : contentMatch ? contentMatch[1] : html;
 
   body = body
     .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
