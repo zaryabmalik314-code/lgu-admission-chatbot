@@ -2,7 +2,7 @@
   "source": "https://lgu.edu.pk",
   "scrapedAt": "2026-11-13T11:50:51.276Z",
   "pageCount": 39,
-  "chunkCount": 144,
+  "chunkCount": 145,
   "chunks": [
     {
       "title": "Admissions at LGU",
@@ -999,10 +999,10 @@
       "id": "c141"
     },
     {
-      "title": "Admission Status Fall 2026",
+      "title": "Admission Status",
       "url": "https://admissions.lgu.edu.pk",
       "pos": 0,
-      "text": "LGU Admissions Fall 2026 (FA-2026)\nThe admissions portal at admissions.lgu.edu.pk currently shows \"ADMISSIONS FA-2026 - APPLY NOW\" with an active Apply Now button.\nFall 2026 semester classes started on 29 Aug 2026 (Graduate) and 31 Aug 2026 (Undergraduate) per the academic calendar.\nFresh intake orientation was held 1-2 Sep 2026.\nThe portal still accepts applications for Fall 2026.\nMerit lists currently posted on the website are for Spring 2026 only.\nFor admission queries contact: 042-37181827, 0322-2757543, 0329-4292976, or admissions@lgu.edu.pk\nOffice hours: Monday-Friday 8:00 AM - 4:00 PM",
+      "text": "LGU Admissions Status (as of November 2026)\nAdmissions for Fall 2026 (FA-2026) are now CLOSED. Classes began on 29 Aug 2026 (Graduate/PhD) and 31 Aug 2026 (Undergraduate).\nThe admissions portal may still show an Apply Now button, but Fall 2026 admissions have closed.\nSpring 2027 admission dates have not been officially announced yet. Spring 2027 classes are scheduled to start 30 Jan 2027 (Graduate) and 1 Feb 2027 (Undergraduate) per the academic calendar.\nFor admission queries contact: 042-37181827, 0322-2757543, 0329-4292976, or admissions@lgu.edu.pk\nOffice hours: Monday-Friday 8:00 AM - 4:00 PM",
       "id": "c142"
     },
     {
@@ -1011,6 +1011,13 @@
       "pos": 10,
       "text": "Spring 2027 Semester Schedule\nCourse Offerings + Enrollment Week: 25 to 29 Jan 2027\nCommencement of MS/MPhil/PhD Classes: 30 Jan 2027\nCommencement of BS Classes: 1 Feb 2027\nOrientation - Fresh Intake: 3 Feb 2027\nLast Date for Submission of Enrollment to ERP: 8 Feb 2027\nSemester Freeze - Last Date: 15 Feb 2027\nMid-Semester Exam: From 27 Mar 2027\nSemester Withdrawal - Last Date: 9 Apr 2027\nEnd-Semester Exam: From 29 May 2027\nResults Submission by Departments to CoE: 10 Jun 2027\nSemester Break: 14 to 25 Jun 2027",
       "id": "c143"
+    },
+    {
+      "title": "Admission Status",
+      "url": "https://lgu.edu.pk/admissions",
+      "pos": 200,
+      "text": "IMPORTANT: Fall 2026 admissions at LGU are CLOSED. The Fall 2026 semester is already underway.\nIf you are looking to apply, you will need to wait for the Spring 2027 admission cycle. Spring 2027 classes start 30 Jan 2027 (Graduate) and 1 Feb 2027 (Undergraduate).\nKeep checking admissions.lgu.edu.pk and lgu.edu.pk/admissions for Spring 2027 admission announcements.\nFor any queries: 042-37181827 or admissions@lgu.edu.pk",
+      "id": "c144"
     }
   ]
 }
