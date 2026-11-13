@@ -1,8 +1,8 @@
 {
   "source": "https://lgu.edu.pk",
-  "scrapedAt": "2026-11-13T11:42:08.764Z",
+  "scrapedAt": "2026-11-13T11:50:51.276Z",
   "pageCount": 39,
-  "chunkCount": 133,
+  "chunkCount": 144,
   "chunks": [
     {
       "title": "Admissions at LGU",
@@ -934,6 +934,83 @@
       "pos": 8,
       "text": "To be a hub of excellence in biological education and health sciences.\nMission\nTo deliver quality education, promote research and address global challenges in health, environment, and sustainability.\nDepartment Societies\nEnvironmental Savior Society (ESS)\nLGU Society of Health and Nutrition\nLGU Bio Serve Society\nCore Values\nSocial well-being\nAcademic excellence\nInnovation\n3 programs from this Department\nFilter in finder\nUndergraduate 04 years\nBachelor of Science in Biotechnology\nProgram details\nUndergraduate 04 years\nBachelor of Science in Genetics\nProgram details\nUndergraduate 04 years AHPC accredited\nBachelor of Science in Human Nutrition and Dietetics\nProgram details\nExperience Our Campus Life\nView Campus Gallery",
       "id": "c132"
+    },
+    {
+      "title": "Fee Structure",
+      "url": "https://lgu.edu.pk/fee-structure",
+      "pos": 100,
+      "text": "Graduate (MS/MPhil) Fee Structure\n\nMS / MPhil Mathematics Fee Structure\nDescription | Amount\nOne-Time Fees\nAdmission Fee | 20,000\nSemester Fees\nTuition Fee (1st Semester) | 125,160\nMisc. Charges (Per Semester) | 3,600\nFee at Time of Admission | 148,760\n2nd Semester Fee | 128,160\nTotal Estimated Fee | 346,000\nPrograms: MPhil Mathematics (Weekend)",
+      "id": "c133"
+    },
+    {
+      "title": "Fee Structure",
+      "url": "https://lgu.edu.pk/fee-structure",
+      "pos": 101,
+      "text": "MS Computer Sciences, Information Technology, Data Sciences, AI Fee Structure\nDescription | Amount\nOne-Time Fees\nAdmission Fee | 20,000\nSemester Fees\nTuition Fee (1st Semester) | 141,792\nMisc. Charges (Per Semester) | 3,600\nFee at Time of Admission | 165,392\n2nd Semester Fee | 144,792\nTotal Estimated Fee | 387,580\nPrograms: MS Computer Science, MS Artificial Intelligence, MS Data Science",
+      "id": "c134"
+    },
+    {
+      "title": "Fee Structure",
+      "url": "https://lgu.edu.pk/fee-structure",
+      "pos": 102,
+      "text": "MS / MPhil English Fee Structure\nDescription | Amount\nOne-Time Fees\nAdmission Fee | 20,000\nSemester Fees\nTuition Fee (1st Semester) | 125,160\nMisc. Charges (Per Semester) | 3,600\nFee at Time of Admission | 148,760\n2nd Semester Fee | 128,760\nTotal Estimated Fee | 346,000\nPrograms: Master of Studies in English Literature",
+      "id": "c135"
+    },
+    {
+      "title": "Fee Structure",
+      "url": "https://lgu.edu.pk/fee-structure",
+      "pos": 103,
+      "text": "MS MBA (2 Years), Mass Comm, App Psy Fee Structure\nDescription | Amount\nOne-Time Fees\nAdmission Fee | 20,000\nSemester Fees\nTuition Fee (1st Semester) | 135,336\nMisc. Charges (Per Semester) | 3,600\nFee at Time of Admission | 158,936\n2nd Semester Fee | 138,336\nTotal Estimated Fee | 371,440\nPrograms: Master of Science in Psychology, MPhil Mass Communication, Masters of Business Administration (MBA), Master of Science in Management Sciences",
+      "id": "c136"
+    },
+    {
+      "title": "Fee Structure",
+      "url": "https://lgu.edu.pk/fee-structure",
+      "pos": 104,
+      "text": "MS Clinical Psychology (MSCP) Fee Structure\nDescription | Amount\nOne-Time Fees\nAdmission Fee | 20,000\nSemester Fees\nTuition Fee (1st Semester) | 135,336\nMisc. Charges (Per Semester) | 3,600\nFee at Time of Admission | 158,936\n2nd Semester Fee | 138,336\nTotal Estimated Fee | 540,610\nPrograms: Master of Science in Clinical Psychology",
+      "id": "c137"
+    },
+    {
+      "title": "Fee Structure",
+      "url": "https://lgu.edu.pk/fee-structure",
+      "pos": 105,
+      "text": "Doctorate (PhD) Fee Structure\n\nPhD Mathematics Fee Structure\nDescription | Amount\nOne-Time Fees\nAdmission Fee | 50,000\nExternal Viva | USD 300\nSemester Fees\nMisc. Charges (Per Semester) | 8,600\nFee at Time of Admission | 183,340\nTotal Estimated Fee | 744,880\nPrograms: PhD Mathematics (Weekend)",
+      "id": "c138"
+    },
+    {
+      "title": "Fee Structure",
+      "url": "https://lgu.edu.pk/fee-structure",
+      "pos": 106,
+      "text": "PhD Computer Science Fee Structure\nDescription | Amount\nOne-Time Fees\nAdmission Fee | 50,000\nExternal Viva | USD 300\nSemester Fees\nTuition Fee (1st Semester) | 137,214\nMisc. Charges (Per Semester) | 8,600\nFee at Time of Admission | 195,814\n2nd Semester Fee | 145,214\nTotal Estimated Fee | 816,408\nPrograms: Ph.D Computer Science",
+      "id": "c139"
+    },
+    {
+      "title": "Fee Structure",
+      "url": "https://lgu.edu.pk/fee-structure",
+      "pos": 107,
+      "text": "PhD Management Sciences Fee Structure\nDescription | Amount\nOne-Time Fees\nAdmission Fee | 50,000\nExternal Viva | USD 300\nSemester Fees\nTuition Fee (1st Semester) | 83,160\nMisc. Charges (Per Semester) | 8,600\nFee at Time of Admission | 141,760\n2nd Semester Fee | 91,160\nTotal Estimated Fee | 523,120\nPrograms: Ph.D Management Science\n\n* Fees are subject to revision. The university reserves the right to modify the fee structure. Contact the Accounts office for exact figures.",
+      "id": "c140"
+    },
+    {
+      "title": "How to Apply Online",
+      "url": "https://lgu.edu.pk/how-to-apply-online",
+      "pos": 0,
+      "text": "How to Apply Online at LGU\n\nStep 1: Go to the Admissions Portal - Visit admissions.lgu.edu.pk to start your application.\nStep 2: Click on \"Apply Now\" on the portal homepage.\nStep 3: Find Your Program - Browse the list of offered programs.\nStep 4: Click Apply Now for Your Program.\nStep 5: Fill Out the Admission Form with accurate details.\nStep 6: Enter Degree Information about your current or most recent degree.\nStep 7: Enter Personal Information (name, date of birth, CNIC, etc.).\nStep 8: Enter Contact Information (phone, email, mailing address).\nStep 9: Enter Previous Academic Information and grades.\nStep 10: Garrison Institution Children (Optional) - enter details if applicable.\nStep 11: Upload Required Documents (transcripts, CNIC, photographs).\nStep 12: Submit Your Application - click Submit. You can then download the application form along with the challan form for fee payment.",
+      "id": "c141"
+    },
+    {
+      "title": "Admission Status Fall 2026",
+      "url": "https://admissions.lgu.edu.pk",
+      "pos": 0,
+      "text": "LGU Admissions Fall 2026 (FA-2026)\nThe admissions portal at admissions.lgu.edu.pk currently shows \"ADMISSIONS FA-2026 - APPLY NOW\" with an active Apply Now button.\nFall 2026 semester classes started on 29 Aug 2026 (Graduate) and 31 Aug 2026 (Undergraduate) per the academic calendar.\nFresh intake orientation was held 1-2 Sep 2026.\nThe portal still accepts applications for Fall 2026.\nMerit lists currently posted on the website are for Spring 2026 only.\nFor admission queries contact: 042-37181827, 0322-2757543, 0329-4292976, or admissions@lgu.edu.pk\nOffice hours: Monday-Friday 8:00 AM - 4:00 PM",
+      "id": "c142"
+    },
+    {
+      "title": "Spring 2027 Semester Dates",
+      "url": "https://lgu.edu.pk/academic-calendar",
+      "pos": 10,
+      "text": "Spring 2027 Semester Schedule\nCourse Offerings + Enrollment Week: 25 to 29 Jan 2027\nCommencement of MS/MPhil/PhD Classes: 30 Jan 2027\nCommencement of BS Classes: 1 Feb 2027\nOrientation - Fresh Intake: 3 Feb 2027\nLast Date for Submission of Enrollment to ERP: 8 Feb 2027\nSemester Freeze - Last Date: 15 Feb 2027\nMid-Semester Exam: From 27 Mar 2027\nSemester Withdrawal - Last Date: 9 Apr 2027\nEnd-Semester Exam: From 29 May 2027\nResults Submission by Departments to CoE: 10 Jun 2027\nSemester Break: 14 to 25 Jun 2027",
+      "id": "c143"
     }
   ]
 }
